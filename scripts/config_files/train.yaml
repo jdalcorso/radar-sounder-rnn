@@ -1,0 +1,9 @@
+input_size: 912
+hidden_size: 64
+seq_len: 256
+epochs: 50
+batch_size: 256
+lr: 0.001
+out_dir: /home/jordydalcorso/workspace/sequential/output
+log_dir: /media/datapart/gianmarcoperantoni/data/logs
+log_level: info
