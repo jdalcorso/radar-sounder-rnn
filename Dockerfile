@@ -1,4 +1,4 @@
-FROM python:3.10.13-slim
+FROM nvcr.io/nvidia/pytorch:23.10-py3
 
 # REPO_DIR contains the path of the repo inside the container, which is 
 # expected to be mounted inside and not copied (this is a dev env)
@@ -11,11 +11,11 @@ ENV TZ=Europe/Rome
 ENV REPO_DIR=${REPO_DIR}
 
 RUN apt-get update -y && apt-get install -y git-flow sudo
-RUN groupadd -g $GROUPID hrlc
-RUN useradd -ms /bin/bash -u $USERID -g $GROUPID containeruser
+RUN groupadd -g $GROUPID sounder
+RUN useradd -ms /bin/bash -u $USERID -g $GROUPID jordydalcorso
 
 # Make sudo easy to use inside the container
-RUN echo "containeruser ALL=(ALL:ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/containeruser
+RUN echo "jordydalcorso ALL=(ALL:ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/jordydalcorso
 
 RUN pip install --upgrade pip
 
