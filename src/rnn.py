@@ -7,7 +7,7 @@ class ConvLSTM(nn.Module):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.conv = nn.Conv2d(in_channels + out_channels, out_channels * 4)
+        self.conv = nn.Conv2d(in_channels + out_channels, out_channels * 4, kernel_size=3, padding='same')
 
     def forward(self, x, h=None, cell=None):
         B, T, c, H, W = x.shape  # x is BTcHW
@@ -45,7 +45,7 @@ class ConvRNN(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.bias = nn.Parameter(torch.zeros(out_channels, dtype=torch.float))
-        self.conv = nn.Conv2d(in_channels + out_channels, out_channels * 2)
+        self.conv = nn.Conv2d(in_channels + out_channels, out_channels * 2, kernel_size=3)
 
     def forward(self, x, h=None):
         B, T, c, H, W = x.shape  # x is BTcHW
