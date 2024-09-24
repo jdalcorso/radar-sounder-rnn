@@ -20,7 +20,6 @@ from torch.cuda import device_count
 from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy
 from torch.optim import AdamW
-from torch.utils.data import DataLoader, TensorDataset, random_split
 
 from model import Model
 from utils import plot_loss, get_dataloaders
@@ -28,6 +27,9 @@ from utils import plot_loss, get_dataloaders
 
 def main(
     hidden_size,
+    hidden_scaling,
+    n_layers,
+    n_classes,
     patch_len,
     seq_len,
     test_size,
@@ -42,17 +44,18 @@ def main(
     logger = logging.getLogger("train")
 
     # Model
-    model = Model()
+    model = Model(1, hidden_size, n_classes, n_layers, hidden_scaling)
     num_devices = device_count()
     if num_devices >= 2:
         model = DataParallel(model)
     model = model.to("cuda")
+    logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Dataset
     train_dl, test_dl = get_dataloaders(data_dir, label_dir, seq_len, patch_len, batch_size, test_size)
     logger.info("Number of sequences TRAIN: {}".format(batch_size*len(train_dl)))
     logger.info("Number of sequences TEST : {}".format(batch_size*len(test_dl)))
-    logger.info("Shape of dataloader items: {}".format(list(next(iter(train_dl))[0].shape)))
+    logger.info("Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape)))
 
     # # Optimizer
     optimizer = AdamW(model.parameters(), lr)
