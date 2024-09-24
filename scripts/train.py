@@ -23,7 +23,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader, TensorDataset, random_split
 
 from model import Model
-from utils import plot_loss
+from utils import plot_loss, get_dataloaders
 
 
 def main(
@@ -49,19 +49,10 @@ def main(
     model = model.to("cuda")
 
     # Dataset
-    data = torch.load(data_dir).to("cuda")
-    data = data.unfold(1, patch_len, patch_len).unfold(1, seq_len, seq_len)
-    data = torch.permute(data, [1,3,0,2]) # NTHW
-    labels = torch.load(label_dir).to("cuda")
-    labels = labels.unfold(1, patch_len, patch_len).unfold(1, seq_len, seq_len)
-    labels = torch.permute(labels, [1,3,0,2]) # NTHW
-    dataset = TensorDataset(data, labels)
-    train_ds, test_ds = random_split(dataset, (1 - test_size, test_size))
-    train_dl = DataLoader(train_ds, batch_size, shuffle=True)
-    test_dl = DataLoader(test_ds, batch_size, shuffle=False)
-    logger.info("Number of sequences TRAIN: {}".format(len(train_ds)))
-    logger.info("Number of sequences TEST : {}".format(len(test_ds)))
-    logger.info("Shape of items: {}".format(list(train_ds[0][0].shape)))
+    train_dl, test_dl = get_dataloaders(data_dir, label_dir, seq_len, patch_len, batch_size, test_size)
+    logger.info("Number of sequences TRAIN: {}".format(batch_size*len(train_dl)))
+    logger.info("Number of sequences TEST : {}".format(batch_size*len(test_dl)))
+    logger.info("Shape of dataloader items: {}".format(list(next(iter(train_dl))[0].shape)))
 
     # # Optimizer
     optimizer = AdamW(model.parameters(), lr)
@@ -77,41 +68,34 @@ def main(
         model.train(True)
         for _, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-            label = item[1].to("cuda")
-            # pred = model(seq)
-            # loss = cross_entropy(pred.transpose(1, 2), label)
-            # loss_train.append(loss)
-            # # Optimize
-            # optimizer.zero_grad()
-            # loss.backward()
-            # optimizer.step()
+            label = item[1].to("cuda").long() # BTHW
+            pred = model(seq).squeeze(2) # BTCHW
+            loss = cross_entropy(pred.flatten(0,1), label.flatten(0,1))
+            loss_train.append(loss)
+            # Optimize
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-    #     # Validation
-    #     loss_val = []
-    #     model.train(False)
-    #     for _, item in enumerate(test_dl):
-    #         seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
-    #         label = item[1].to("cuda")
-    #         pred = model(seq)
-    #         loss_t = cross_entropy(pred.transpose(1, 2),label)
-    #         loss_val.append(loss_t)
+        # Validation
+        loss_val = []
+        model.train(False)
+        for _, item in enumerate(test_dl):
+            seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
+            label = item[1].to("cuda").long()
+            pred = model(seq)
+            loss_t = cross_entropy(pred.flatten(0,1), label.flatten(0,1))
+            loss_val.append(loss_t)
 
-    #     loss_train, loss_val= torch.tensor(loss_train).mean(), torch.tensor(loss_val).mean()
-    #     loss_train_tot.append(loss_train)
-    #     loss_val_tot.append(loss_val)
-    #     logger.info(
-    #         "Epoch:",
-    #         epoch,
-    #         "Loss train:",
-    #         loss_train.item(),
-    #         "Loss val:",
-    #         loss_val.item(),
-    #         "Time:",
-    #         time.time() - t0,
-    #     )
+        loss_train, loss_val= torch.tensor(loss_train).mean(), torch.tensor(loss_val).mean()
+        loss_train_tot.append(loss_train)
+        loss_val_tot.append(loss_val)
 
-    # plot_loss(loss_train_tot, loss_val_tot, out_dir)
-    # # torch.save(model.state_dict(), out_dir + "/latest.pt")
+        logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
+        logger.info(logger_str.format(epoch+1, loss_train.item(), loss_val.item(), time.time() - t0))
+
+    plot_loss(loss_train_tot, loss_val_tot, out_dir)
+    torch.save(model.state_dict(), out_dir + "/latest.pt")
 
 
 

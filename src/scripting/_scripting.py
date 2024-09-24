@@ -117,7 +117,7 @@ def logged_main(description: str, main_fn: typing.Callable) -> None:
     # INFO log messages are printed in the log file, regardless of the
     # configuration).
     logfile_handler = logging.FileHandler(filename=log_filename)
-    logfile_handler.setLevel(logging.DEBUG)
+    logfile_handler.setLevel(logging.getLevelName(log_level.upper()))
     frmttr_logfile = logging.Formatter(
         "%(asctime)s [%(name)s-%(levelname)s]: %(message)s"
     )
@@ -131,7 +131,7 @@ def logged_main(description: str, main_fn: typing.Callable) -> None:
         aligned_output += f"{key:<{max_key_length}} : {value}\n"
 
     logging.info("Configuration Complete.")
-    logging.info("YAML Config File:\n%s", aligned_output)
+    logging.info("YAML Config File:\n\n%s", aligned_output)
     # ---- Run tuning
     main_fn(**config)
 
