@@ -22,12 +22,15 @@ from torch.nn.functional import cross_entropy
 from torch.optim import AdamW
 
 from model import Model
-from utils import plot_loss, get_dataloaders
+from utils import plot_loss, get_dataloaders, plot_results
 
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
 
 def main(
     hidden_size,
     hidden_scaling,
+    kernel_size,
     n_layers,
     n_classes,
     patch_len,
@@ -44,7 +47,7 @@ def main(
     logger = logging.getLogger("train")
 
     # Model
-    model = Model(1, hidden_size, n_classes, n_layers, hidden_scaling)
+    model = Model(1, hidden_size, n_classes, n_layers, hidden_scaling, kernel_size)
     num_devices = device_count()
     if num_devices >= 2:
         model = DataParallel(model)
@@ -73,12 +76,13 @@ def main(
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
             label = item[1].to("cuda").long() # BTHW
             pred = model(seq).squeeze(2) # BTCHW
-            loss = cross_entropy(pred.flatten(0,1), label.flatten(0,1))
+            loss = cross_entropy(pred.flatten(0,1), label.flatten(0,1)) # weight=torch.tensor([0.04,0.2,0.18,0.54,0.04]).to('cuda') [0.36,0.04,0.54,0.06]
             loss_train.append(loss)
             # Optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        plot_results(seq[0],label[0],pred[0].argmax(1),out_dir+'/train'+str(epoch+1)+'.png')
 
         # Validation
         loss_val = []
@@ -89,6 +93,7 @@ def main(
             pred = model(seq)
             loss_t = cross_entropy(pred.flatten(0,1), label.flatten(0,1))
             loss_val.append(loss_t)
+        plot_results(seq[0],label[0],pred[0].argmax(1),out_dir+'/val'+str(epoch+1)+'.png')
 
         loss_train, loss_val= torch.tensor(loss_train).mean(), torch.tensor(loss_val).mean()
         loss_train_tot.append(loss_train)

@@ -3,10 +3,10 @@ from cnn import Encoder, Decoder
 from rnn import ConvLSTM, ConvRNN
 
 class Model(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, n_layers, hidden_scaling):
+    def __init__(self, in_channels, hidden_channels, out_channels, n_layers, hidden_scaling, kernel_size):
         super().__init__()
-        self.encoder = Encoder(in_channels, hidden_channels, n_layers, hidden_scaling)
-        self.decoder = Decoder(hidden_channels, out_channels, n_layers, hidden_scaling)
+        self.encoder = Encoder(in_channels, hidden_channels, n_layers, hidden_scaling, kernel_size)
+        self.decoder = Decoder(hidden_channels, out_channels, n_layers, hidden_scaling, kernel_size)
         self.rnn = ConvLSTM(hidden_channels, hidden_channels)
         self.out_channels = out_channels
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
