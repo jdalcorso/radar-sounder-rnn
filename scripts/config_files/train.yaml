@@ -3,13 +3,13 @@ hidden_size: 128
 hidden_scaling: 2
 kernel_size: 5
 n_layers: 2
-n_classes: 5
+n_classes: 4
 
 # Dataset
-data_dir: /home/jordydalcorso/workspace/datasets/SHARAD/sharad_north_rg.pt #MCORDS1_Ilisei/rg_MCORDS1.pt
-label_dir: /home/jordydalcorso/workspace/datasets/SHARAD/sharad_north_sg5.pt #MCORDS1_Ilisei/sg_MCORDS1.pt
+data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1_Ilisei/rg_MCORDS1.pt #SHARAD/sharad_north_rg.pt
+label_dir: /home/jordydalcorso/workspace/datasets/MCORDS1_Ilisei/sg_MCORDS1.pt #SHARAD/sharad_north_sg5.pt
 patch_len: 32
-seq_len: 5
+seq_len: 2
 test_size: 0.1
 
 # Train
