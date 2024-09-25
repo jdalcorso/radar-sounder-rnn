@@ -9,6 +9,7 @@ def plot_loss(loss_train, loss_val, out_dir):
     plt.savefig(out_dir + "/loss.png")
     plt.close()
 
+
 def get_dataloaders(data_dir, label_dir, seq_len, patch_len, batch_size, test_size):
     data = torch.load(data_dir).to("cuda")
     data = data.unfold(1, patch_len, patch_len).unfold(1, seq_len, seq_len)
@@ -24,3 +25,21 @@ def get_dataloaders(data_dir, label_dir, seq_len, patch_len, batch_size, test_si
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
     return train_dl, test_dl
+
+
+def plot_results(seq,label,pred,name):
+
+    # seq, label, pred has to be THW (seq TCHW -> THW)
+    seq = seq.squeeze() if len(seq.shape)>3 else seq
+    T = seq.shape[0]
+    fig, axes = plt.subplots(3, T, figsize=(20,20))
+    for i in range(T):
+        axes[0, i].imshow(seq[i].cpu().numpy(), cmap='gray', aspect='auto')
+        axes[0, i].axis('off')
+        axes[1, i].imshow(label[i].cpu().numpy(), aspect='auto', interpolation='nearest')
+        axes[1, i].axis('off')
+        axes[2, i].imshow(pred[i].cpu().numpy(), aspect='auto', interpolation='nearest')
+        axes[2, i].axis('off')
+    plt.tight_layout()
+    plt.savefig(name)
+    plt.close()
