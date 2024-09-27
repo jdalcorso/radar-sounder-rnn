@@ -22,7 +22,7 @@ from torch.nn.functional import cross_entropy
 from torch.optim import AdamW
 
 from model import Model, UNetWrapper
-from utils import plot_loss, get_dataloaders, plot_results
+from utils import plot_loss, get_dataloaders, plot_results, pos_encode
 
 torch.manual_seed(42)
 torch.cuda.manual_seed(42)
@@ -33,6 +33,7 @@ def main(
     kernel_size,
     n_layers,
     n_classes,
+    pos_enc,
     patch_len,
     seq_len,
     test_size,
@@ -47,7 +48,8 @@ def main(
     logger = logging.getLogger("train")
 
     # Model
-    model = Model(1, hidden_size, n_classes, n_layers, hidden_scaling, kernel_size)
+    in_channels = 2 if pos_enc else 1
+    model = Model(in_channels, hidden_size, n_classes, n_layers, hidden_scaling, kernel_size)
     num_devices = device_count()
     if num_devices >= 2:
         model = DataParallel(model)
@@ -74,9 +76,10 @@ def main(
         model.train(True)
         for _, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
+            seq = pos_encode(seq) if pos_enc else seq
             label = item[1].to("cuda").long() # BTHW
             pred = model(seq).squeeze(2) # BTCHW
-            loss = cross_entropy(pred.flatten(0,1), label.flatten(0,1)) # weight=torch.tensor([0.04,0.2,0.18,0.54,0.04]).to('cuda') [0.36,0.04,0.54,0.06]
+            loss = cross_entropy(pred.flatten(0,1), label.flatten(0,1), weight=torch.tensor([0.36,0.04,0.54,0.06]).to('cuda')) # weight=torch.tensor([0.04,0.2,0.18,0.54,0.04]).to('cuda') [0.36,0.04,0.54,0.06]
             loss_train.append(loss)
             # Optimize
             optimizer.zero_grad()
@@ -89,6 +92,7 @@ def main(
         model.train(False)
         for _, item in enumerate(test_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
+            seq = pos_encode(seq) if pos_enc else seq
             label = item[1].to("cuda").long()
             pred = model(seq)
             loss_t = cross_entropy(pred.flatten(0,1), label.flatten(0,1))
