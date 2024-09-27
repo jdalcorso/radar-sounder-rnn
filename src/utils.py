@@ -30,7 +30,7 @@ def get_dataloaders(data_dir, label_dir, seq_len, patch_len, batch_size, test_si
 def plot_results(seq,label,pred,name):
 
     # seq, label, pred has to be THW (seq TCHW -> THW)
-    seq = seq.squeeze() if len(seq.shape)>3 else seq
+    seq = seq[:,0] if len(seq.shape)>3 else seq
     T = seq.shape[0]
     fig, axes = plt.subplots(3, T, figsize=(20,20))
     for i in range(T):
@@ -43,3 +43,15 @@ def plot_results(seq,label,pred,name):
     plt.tight_layout()
     plt.savefig(name)
     plt.close()
+
+def pos_encode(seq):
+    # Set to 1 all pixels above max (in H)
+    B,T,C,H,W = seq.shape
+    m = torch.argmax(seq, dim=3)
+    m_expanded = m.unsqueeze(3).expand(-1,-1,-1,H,-1)
+    range_H = torch.arange(H).reshape(1, 1, 1, H, 1).to('cuda')
+    pos = (torch.clone(range_H)/torch.arange(H).sum()).repeat([B,T,C,1,W]).flip(dims=(3,))
+    mask = range_H <= m_expanded
+    pos[mask]=1.0
+    seq = torch.cat([seq, pos],dim=2)
+    return seq
