@@ -1,5 +1,5 @@
 # Model
-model: 'unet'
+model: 'urnet'
 hidden_size: 128
 hidden_scaling: 1
 kernel_size: 5
