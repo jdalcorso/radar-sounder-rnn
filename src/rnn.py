@@ -2,20 +2,25 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 
+
 class ConvLSTM(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.conv = nn.Conv2d(in_channels + out_channels, out_channels * 4, kernel_size=3, padding='same')
+        self.conv = nn.Conv2d(
+            in_channels + out_channels, out_channels * 4, kernel_size=3, padding="same"
+        )
 
     def forward(self, x, h=None, cell=None):
         B, T, c, H, W = x.shape  # x is BTcHW
-        if h is None: # BCHW
-            h = torch.rand((B, self.out_channels, H,W), dtype=torch.float).to("cuda")
+        if h is None:  # BCHW
+            h = torch.rand((B, self.out_channels, H, W), dtype=torch.float).to("cuda")
 
-        if cell is None: # BCHW
-            cell = torch.rand((B, self.out_channels,  H,W), dtype=torch.float).to("cuda")
+        if cell is None:  # BCHW
+            cell = torch.rand((B, self.out_channels, H, W), dtype=torch.float).to(
+                "cuda"
+            )
 
         h_final = []
         c_final = []
@@ -33,11 +38,12 @@ class ConvLSTM(nn.Module):
             c_out = (h_i * cell) + (x_i * cell)
             h_out = o_i * f.relu(cell)
 
-            h_final.append(h_out.unsqueeze(1)) # B1CHW
-            c_final.append(c_out.unsqueeze(1)) # B1CHW
+            h_final.append(h_out.unsqueeze(1))  # B1CHW
+            c_final.append(c_out.unsqueeze(1))  # B1CHW
             h = h_out
             cell = c_out
         return torch.cat(h_final, dim=1), torch.cat(c_final, dim=1)  # BTCHW * 2
+
 
 class ConvRNN(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -45,12 +51,14 @@ class ConvRNN(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.bias = nn.Parameter(torch.zeros(out_channels, dtype=torch.float))
-        self.conv = nn.Conv2d(in_channels + out_channels, out_channels * 2, kernel_size=3)
+        self.conv = nn.Conv2d(
+            in_channels + out_channels, out_channels * 2, kernel_size=3
+        )
 
     def forward(self, x, h=None):
         B, T, c, H, W = x.shape  # x is BTcHW
         if h is None:
-            h = torch.rand((B, self.out_channels, H,W), dtype=torch.float).to(
+            h = torch.rand((B, self.out_channels, H, W), dtype=torch.float).to(
                 "cuda"
             )  # h is BCHW
 
@@ -64,4 +72,3 @@ class ConvRNN(nn.Module):
             outputs.append(h_out.unsqueeze(1))  # B1CHW
             h_i = h_out
         return torch.cat(outputs, dim=1)  # BTCHW
-
