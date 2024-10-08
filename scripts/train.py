@@ -21,13 +21,14 @@ from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy
 from torch.optim import AdamW
 
-from model import Model, UNetWrapper
-from utils import plot_loss, get_dataloaders, plot_results, pos_encode
+from utils import plot_loss, get_dataloaders, plot_results, pos_encode, get_model
 
 torch.manual_seed(42)
 torch.cuda.manual_seed(42)
 
+
 def main(
+    model,
     hidden_size,
     hidden_scaling,
     kernel_size,
@@ -49,7 +50,8 @@ def main(
 
     # Model
     in_channels = 2 if pos_enc else 1
-    model = Model(in_channels, hidden_size, n_classes, n_layers, hidden_scaling, kernel_size)
+    cfg = [model, hidden_size, hidden_scaling, kernel_size, n_layers, n_classes]
+    model = get_model(cfg)
     num_devices = device_count()
     if num_devices >= 2:
         model = DataParallel(model)
@@ -57,10 +59,14 @@ def main(
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Dataset
-    train_dl, test_dl = get_dataloaders(data_dir, label_dir, seq_len, patch_len, batch_size, test_size)
-    logger.info("Number of sequences TRAIN: {}".format(batch_size*len(train_dl)))
-    logger.info("Number of sequences TEST : {}".format(batch_size*len(test_dl)))
-    logger.info("Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape)))
+    train_dl, test_dl = get_dataloaders(
+        data_dir, label_dir, seq_len, patch_len, batch_size, test_size
+    )
+    logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
+    logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
+    logger.info(
+        "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
+    )
 
     # # Optimizer
     optimizer = AdamW(model.parameters(), lr)
@@ -77,15 +83,24 @@ def main(
         for _, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
             seq = pos_encode(seq) if pos_enc else seq
-            label = item[1].to("cuda").long() # BTHW
-            pred = model(seq).squeeze(2) # BTCHW
-            loss = cross_entropy(pred.flatten(0,1), label.flatten(0,1), weight=torch.tensor([0.36,0.04,0.54,0.06]).to('cuda')) # weight=torch.tensor([0.04,0.2,0.18,0.54,0.04]).to('cuda') [0.36,0.04,0.54,0.06]
+            label = item[1].to("cuda").long()  # BTHW
+            pred = model(seq).squeeze(2)  # BTCHW
+            loss = cross_entropy(
+                pred.flatten(0, 1),
+                label.flatten(0, 1),
+                weight=torch.tensor([0.36, 0.04, 0.54, 0.06]).to("cuda"),
+            )  # weight=torch.tensor([0.04,0.2,0.18,0.54,0.04]).to('cuda') [0.36,0.04,0.54,0.06]
             loss_train.append(loss)
             # Optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        plot_results(seq[0],label[0],pred[0].argmax(1),out_dir+'/train'+str(epoch+1)+'.png')
+        plot_results(
+            seq[0],
+            label[0],
+            pred[0].argmax(1),
+            out_dir + "/train" + str(epoch + 1) + ".png",
+        )
 
         # Validation
         loss_val = []
@@ -95,21 +110,31 @@ def main(
             seq = pos_encode(seq) if pos_enc else seq
             label = item[1].to("cuda").long()
             pred = model(seq)
-            loss_t = cross_entropy(pred.flatten(0,1), label.flatten(0,1))
+            loss_t = cross_entropy(pred.flatten(0, 1), label.flatten(0, 1))
             loss_val.append(loss_t)
-        plot_results(seq[0],label[0],pred[0].argmax(1),out_dir+'/val'+str(epoch+1)+'.png')
+        plot_results(
+            seq[0],
+            label[0],
+            pred[0].argmax(1),
+            out_dir + "/val" + str(epoch + 1) + ".png",
+        )
 
-        loss_train, loss_val= torch.tensor(loss_train).mean(), torch.tensor(loss_val).mean()
+        loss_train, loss_val = (
+            torch.tensor(loss_train).mean(),
+            torch.tensor(loss_val).mean(),
+        )
         loss_train_tot.append(loss_train)
         loss_val_tot.append(loss_val)
 
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
-        logger.info(logger_str.format(epoch+1, loss_train.item(), loss_val.item(), time.time() - t0))
+        logger.info(
+            logger_str.format(
+                epoch + 1, loss_train.item(), loss_val.item(), time.time() - t0
+            )
+        )
 
     plot_loss(loss_train_tot, loss_val_tot, out_dir)
     torch.save(model.state_dict(), out_dir + "/latest.pt")
-
-
 
 
 if __name__ == "__main__":

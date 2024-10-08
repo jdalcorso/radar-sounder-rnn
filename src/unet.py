@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# U-Net from https://github.com/milesial/Pytorch-UNet/
+# U-Net modified from https://github.com/milesial/Pytorch-UNet/
 
 
 class DoubleConv(nn.Module):
@@ -13,10 +13,10 @@ class DoubleConv(nn.Module):
         if not mid_channels:
             mid_channels = out_channels
         self.double_conv = nn.Sequential(
-            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(in_channels, mid_channels, kernel_size=7, padding=3, bias=True),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(mid_channels, out_channels, kernel_size=7, padding=3, bias=True),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
         )
@@ -41,7 +41,7 @@ class Down(nn.Module):
 class Up(nn.Module):
     """Upscaling then double conv"""
 
-    def __init__(self, in_channels, out_channels, bilinear=True):
+    def __init__(self, in_channels, out_channels, bilinear=False):
         super().__init__()
 
         # if bilinear, use the normal convolutions to reduce the number of channels
@@ -77,24 +77,14 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 
-class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
-        super(UNet, self).__init__()
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.bilinear = bilinear
-
-        self.inc = DoubleConv(n_channels, 64)
-        self.down1 = Down(64, 128)
-        self.down2 = Down(128, 256)
-        self.down3 = Down(256, 512)
-        factor = 2 if bilinear else 1
-        self.down4 = Down(512, 1024 // factor)
-        self.up1 = Up(1024, 512 // factor, bilinear)
-        self.up2 = Up(512, 256 // factor, bilinear)
-        self.up3 = Up(256, 128 // factor, bilinear)
-        self.up4 = Up(128, 64, bilinear)
-        self.outc = OutConv(64, n_classes)
+class UNetEncoder(nn.Module):
+    def __init__(self, n_channels=1, n_out=512):
+        super().__init__()
+        self.inc = DoubleConv(n_channels, n_out // 16)
+        self.down1 = Down(n_out // 16, n_out // 8)
+        self.down2 = Down(n_out // 8, n_out // 4)
+        self.down3 = Down(n_out // 4, n_out // 2)
+        self.down4 = Down(n_out // 2, n_out)
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -102,9 +92,36 @@ class UNet(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
+        return x1, x2, x3, x4, x5
+
+
+class UNetDecoder(nn.Module):
+    def __init__(self, n_channels=512, n_classes=4):
+        super().__init__()
+        self.up1 = Up(n_channels, n_channels // 2)
+        self.up2 = Up(n_channels // 2, n_channels // 4)
+        self.up3 = Up(n_channels // 4, n_channels // 8)
+        self.up4 = Up(n_channels // 8, n_channels // 16)
+        self.outc = OutConv(n_channels // 16, n_classes)
+
+    def forward(self, x1, x2, x3, x4, x5):
         x = self.up1(x5, x4)
         x = self.up2(x, x3)
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         logits = self.outc(x)
         return logits
+
+
+class UNet(nn.Module):
+    def __init__(self, in_channels, out_channels, hidden_channels):
+        super(UNet, self).__init__()
+        self.n_channels = in_channels
+        self.n_classes = out_channels
+        self.encoder = UNetEncoder(in_channels, hidden_channels)
+        self.decoder = UNetDecoder(hidden_channels, out_channels)
+
+    def forward(self, x):
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        x = self.decoder(x1, x2, x3, x4, x5)
+        return x

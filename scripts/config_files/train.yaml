@@ -1,5 +1,6 @@
 # Model
-hidden_size: 256
+model: 'unet'
+hidden_size: 128
 hidden_scaling: 1
 kernel_size: 5
 n_layers: 3
@@ -9,12 +10,12 @@ pos_enc: True
 # Dataset
 data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1_Ilisei/rg_MCORDS1.pt #SHARAD/sharad_north_rg.pt
 label_dir: /home/jordydalcorso/workspace/datasets/MCORDS1_Ilisei/sg_MCORDS1.pt #SHARAD/sharad_north_sg5.pt
-patch_len: 24
-seq_len: 5
+patch_len: 32
+seq_len: 20
 test_size: 0.1
 
 # Train
-epochs: 2
+epochs: 5
 batch_size: 8
 lr: 0.001
 
