@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 from model import Model, UNetWrapper, URNN
 
 
-def get_model(cfg):
+def get_model(model, cfg):
     match model:
         case "base":
             model = Model(*cfg)
