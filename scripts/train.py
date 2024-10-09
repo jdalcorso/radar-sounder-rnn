@@ -21,10 +21,16 @@ from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy
 from torch.optim import AdamW
 
-from utils import plot_loss, get_dataloaders, plot_results, pos_encode, get_model
+from utils import (
+    plot_loss,
+    get_dataloaders,
+    plot_results,
+    pos_encode,
+    get_model,
+    set_seed,
+)
 
-torch.manual_seed(42)
-torch.cuda.manual_seed(42)
+set_seed(42)
 
 
 def main(

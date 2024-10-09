@@ -1,4 +1,6 @@
 import torch
+import numpy
+import random
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset, random_split
 from model import Model, UNetWrapper, URNN
@@ -25,11 +27,11 @@ def plot_loss(loss_train, loss_val, out_dir):
 
 def get_dataloaders(data_dir, label_dir, seq_len, patch_len, batch_size, test_size):
     data = torch.load(data_dir).to("cuda")
-    data = data.unfold(1, patch_len, patch_len).unfold(1, seq_len, seq_len)
+    data = data.unfold(1, patch_len, patch_len).unfold(1, seq_len, 2)
     data = torch.permute(data, [1, 3, 0, 2])  # NTHW
 
     labels = torch.load(label_dir).to("cuda")
-    labels = labels.unfold(1, patch_len, patch_len).unfold(1, seq_len, seq_len)
+    labels = labels.unfold(1, patch_len, patch_len).unfold(1, seq_len, 2)
     labels = torch.permute(labels, [1, 3, 0, 2])  # NTHW
 
     dataset = TensorDataset(data, labels)
@@ -74,3 +76,12 @@ def pos_encode(seq):
     pos[mask] = 1.0
     seq = torch.cat([seq, pos], dim=2)
     return seq
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    numpy.random.seed(seed)
+    random.seed(seed)
