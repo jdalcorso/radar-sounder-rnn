@@ -48,7 +48,6 @@ def main(
     batch_size,
     lr,
     data_dir,
-    label_dir,
     out_dir,
     **kwargs,
 ):
@@ -66,7 +65,7 @@ def main(
 
     # Dataset
     train_dl, test_dl = get_dataloaders(
-        data_dir, label_dir, seq_len, patch_len, batch_size, test_size
+        data_dir, seq_len, patch_len, batch_size, test_size
     )
     logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
     logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
