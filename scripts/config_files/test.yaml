@@ -1,0 +1,21 @@
+# Model
+model: 'unet'
+hidden_size: 128
+hidden_scaling: 1
+kernel_size: 5
+n_layers: 3
+n_classes: 4
+pos_enc: True
+
+# Dataset
+data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
+patch_len: 64
+seq_len: 10
+
+# Test
+batch_size: 64
+
+# Log
+out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
+log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
+log_level: info
