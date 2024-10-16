@@ -16,13 +16,10 @@ from torch.utils.data import DataLoader
 from dataset import RadargramDataset
 from sklearn.metrics import classification_report, confusion_matrix
 
-from utils import (
-    pos_encode,
-    get_model,
-    set_seed,
-)
+from utils import pos_encode, get_model, set_seed, get_hooks, show_feature_maps
 
 set_seed(42)
+hooked_outputs = []
 
 
 def main(
@@ -43,6 +40,7 @@ def main(
     logger = logging.getLogger("train")
 
     # Model
+    model_name = model
     in_channels = 2 if pos_enc else 1
     cfg = [in_channels, hidden_size, n_classes, n_layers, hidden_scaling, kernel_size]
     model = get_model(model, cfg)
@@ -56,6 +54,9 @@ def main(
     # Dataset
     ds = RadargramDataset(data_dir, seq_len, patch_len, patch_len, seq_len)
     dl = DataLoader(ds, batch_size, shuffle=False)
+
+    # Hooks
+    hooks = get_hooks(model_name, model, hook_fn)
 
     # Test
     model.train(False)
@@ -71,10 +72,15 @@ def main(
     preds = torch.cat(preds, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)
     torch.save(preds.byte(), out_dir + "/pred.pt")
 
+    show_feature_maps(hooked_outputs[: 2 * len(hooks)], out_dir)
     print("Classification report:\n")
     print(classification_report(labels.flatten(), preds.flatten().cpu()))
     print("Confusion matrix:\n")
     print(confusion_matrix(labels.flatten(), preds.flatten().cpu()))
+
+
+def hook_fn(module, input, output):
+    hooked_outputs.append(output[0].detach().cpu())
 
 
 if __name__ == "__main__":

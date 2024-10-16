@@ -84,3 +84,46 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
     numpy.random.seed(seed)
     random.seed(seed)
+
+
+def get_hooks(model_name, model, hook_fn):
+    hooks = []
+    assert isinstance(model, torch.nn.DataParallel)
+    match model_name:
+        case "base":
+            for layer in model.module.children():
+                hooks.append(layer.register_forward_hook(hook_fn))
+        case "unet":
+            for layer in model.module.unet.encoder.children():
+                hooks.append(layer.register_forward_hook(hook_fn))
+            for layer in model.module.unet.decoder.children():
+                hooks.append(layer.register_forward_hook(hook_fn))
+            hooks.pop()
+        case "urnet":
+            for layer in model.module.encoder.children():
+                hooks.append(layer.register_forward_hook(hook_fn))
+            for layer in model.module.decoder.children():
+                hooks.append(layer.register_forward_hook(hook_fn))
+    return hooks
+
+
+def show_feature_maps(maps, out_dir):
+    """
+    Maps should be a list of CHW images.
+    This algorithm does PCA to transform each image into a 3HW,
+    min-max normalize and shows it in a subplot
+    """
+    fig, axes = plt.subplots(1, len(maps), figsize=(30, 10))
+    axes = axes.flatten()
+    for i in range(len(axes)):
+        C, H, W = maps[i].shape
+        map = maps[i].permute(1, 2, 0).flatten(0, 1)  # (HW)C
+        U, S, _ = torch.pca_lowrank(map, 3)
+        img = U[:, :3] @ torch.diag(S)  # (HW)3
+        img = img.view(H, W, 3)  # HW3
+        mi, ma = img.min(), img.max()
+        img = (img - mi) / (ma - mi)
+        axes[i].imshow(img.numpy(), aspect="auto")
+        axes[i].axis("off")
+    plt.savefig(out_dir + "/maps.png")
+    plt.close()
