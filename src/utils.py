@@ -3,14 +3,12 @@ import numpy
 import random
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
-from model import Model, UNetWrapper, URNN
+from model import UNetWrapper, URNN
 from dataset import RadargramDataset
 
 
 def get_model(model, cfg):
     match model:
-        case "base":
-            model = Model(*cfg)
         case "unet":
             model = UNetWrapper(*cfg)
         case "urnet":
@@ -90,9 +88,6 @@ def get_hooks(model_name, model, hook_fn):
     hooks = []
     assert isinstance(model, torch.nn.DataParallel)
     match model_name:
-        case "base":
-            for layer in model.module.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
         case "unet":
             for layer in model.module.unet.encoder.children():
                 hooks.append(layer.register_forward_hook(hook_fn))
