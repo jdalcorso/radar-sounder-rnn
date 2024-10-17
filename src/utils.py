@@ -3,18 +3,20 @@ import numpy
 import random
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
-from model import UNetWrapper, NLUNetWrapper, URNN
+from model import UNetWrapper, NLUNetWrapper, URNN, NLURNN
 from dataset import RadargramDataset
 
 
 def get_model(model, cfg):
     match model:
-        case "unet":
+        case "u":
             model = UNetWrapper(*cfg)
-        case "nlunet":
+        case "nlu":
             model = NLUNetWrapper(*cfg)
-        case "urnet":
+        case "ur":
             model = URNN(*cfg)
+        case "nlur":
+            model = NLURNN(*cfg)
     return model
 
 
@@ -90,19 +92,13 @@ def get_hooks(model_name, model, hook_fn):
     hooks = []
     assert isinstance(model, torch.nn.DataParallel)
     match model_name:
-        case "unet":
+        case "u" | "nlu":
             for layer in model.module.unet.encoder.children():
                 hooks.append(layer.register_forward_hook(hook_fn))
             for layer in model.module.unet.decoder.children():
                 hooks.append(layer.register_forward_hook(hook_fn))
             hooks.pop()
-        case "nlunet":
-            for layer in model.module.unet.encoder.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
-            for layer in model.module.unet.decoder.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
-            hooks.pop()
-        case "urnet":
+        case "ur" | "nlur":
             for layer in model.module.encoder.children():
                 hooks.append(layer.register_forward_hook(hook_fn))
             for layer in model.module.decoder.children():
