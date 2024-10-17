@@ -50,9 +50,8 @@ class ConvRNN(nn.Module):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.bias = nn.Parameter(torch.zeros(out_channels, dtype=torch.float))
         self.conv = nn.Conv2d(
-            in_channels + out_channels, out_channels * 2, kernel_size=3
+            in_channels + out_channels, out_channels * 2, kernel_size=3, padding="same"
         )
 
     def forward(self, x, h=None):
@@ -68,7 +67,7 @@ class ConvRNN(nn.Module):
             cat_x = torch.cat([x_i, h], dim=1)  # B(c+C)HW
             conv_x = self.conv(cat_x)  # B(2C)HW
             x_i, h_i = torch.chunk(conv_x, 2, dim=1)  # BCHW, BCHW
-            h_out = torch.tanh(x_i + h_i + self.bias.view(1, -1, 1))  # BCHW
+            h_out = torch.tanh(x_i + h_i)  # BCHW
             outputs.append(h_out.unsqueeze(1))  # B1CHW
             h_i = h_out
-        return torch.cat(outputs, dim=1)  # BTCHW
+        return torch.cat(outputs, dim=1), 0  # BTCHW

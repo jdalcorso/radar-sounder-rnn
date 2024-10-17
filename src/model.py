@@ -1,5 +1,5 @@
 import torch.nn as nn
-from rnn import ConvLSTM
+from rnn import ConvLSTM, ConvRNN
 from unet import UNet, UNetDecoder, UNetEncoder
 from nl import NLUNet, NLUNetDecoder, NLUNetEncoder
 
@@ -97,7 +97,7 @@ class NLURNN(nn.Module):
         super().__init__()
         self.encoder = NLUNetEncoder(in_channels, hidden_channels)
         self.decoder = NLUNetDecoder(hidden_channels, out_channels)
-        self.rnn = ConvLSTM(hidden_channels, hidden_channels)
+        self.rnn = ConvRNN(hidden_channels, hidden_channels)
         self.out_channels = out_channels
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
 
