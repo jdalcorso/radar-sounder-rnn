@@ -1,6 +1,7 @@
 import torch.nn as nn
 from rnn import ConvLSTM
 from unet import UNet, UNetDecoder, UNetEncoder
+from nl import NLUNet
 
 
 class UNetWrapper(nn.Module):
@@ -15,6 +16,28 @@ class UNetWrapper(nn.Module):
     ):
         super().__init__()
         self.unet = UNet(in_channels, out_channels, hidden_channels)
+        self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def forward(self, x):  # BTcHW
+        B, T, c, H, W = x.shape
+        x = x.flatten(0, 1)  # (BT)cHW
+        x = self.unet(x)
+        x = x.view(B, T, -1, H, W)  # BTCHW
+        return x
+
+
+class NLUNetWrapper(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        hidden_channels,
+        out_channels,
+        n_layers,
+        hidden_scaling,
+        kernel_size,
+    ):
+        super().__init__()
+        self.unet = NLUNet(in_channels, out_channels, hidden_channels)
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def forward(self, x):  # BTcHW
