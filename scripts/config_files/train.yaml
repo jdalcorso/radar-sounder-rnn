@@ -9,8 +9,8 @@ pos_enc: True
 
 # Dataset
 data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
-patch_len: 64
-seq_len: 10
+patch_len: 32
+seq_len: 16
 test_size: 0.1
 
 # Train
