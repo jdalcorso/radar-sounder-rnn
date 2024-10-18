@@ -58,9 +58,6 @@ class URNN(nn.Module):
         in_channels,
         hidden_channels,
         out_channels,
-        n_layers,
-        hidden_scaling,
-        kernel_size,
     ):
         super().__init__()
         self.encoder = UNetEncoder(in_channels, hidden_channels)
@@ -90,9 +87,6 @@ class NLURNN(nn.Module):
         in_channels,
         hidden_channels,
         out_channels,
-        n_layers,
-        hidden_scaling,
-        kernel_size,
     ):
         super().__init__()
         self.encoder = NLUNetEncoder(in_channels, hidden_channels)

@@ -36,9 +36,6 @@ set_seed(42)
 def main(
     model,
     hidden_size,
-    hidden_scaling,
-    kernel_size,
-    n_layers,
     n_classes,
     pos_enc,
     patch_len,
@@ -55,7 +52,7 @@ def main(
 
     # Model
     in_channels = 2 if pos_enc else 1
-    cfg = [in_channels, hidden_size, n_classes, n_layers, hidden_scaling, kernel_size]
+    cfg = [in_channels, hidden_size, n_classes]
     model = get_model(model, cfg)
     num_devices = device_count()
     if num_devices >= 2:

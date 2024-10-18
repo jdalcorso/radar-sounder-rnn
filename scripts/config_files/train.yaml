@@ -1,9 +1,6 @@
 # Model
 model: 'nlur'
 hidden_size: 128
-hidden_scaling: 1
-kernel_size: 5
-n_layers: 3
 n_classes: 4
 pos_enc: True
 
@@ -14,7 +11,7 @@ seq_len: 16
 test_size: 0.1
 
 # Train
-epochs: 5
+epochs: 1
 batch_size: 8
 lr: 0.001
 
