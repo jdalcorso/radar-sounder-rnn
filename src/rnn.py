@@ -4,7 +4,7 @@ import torch.nn.functional as f
 
 
 class ConvLSTM(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, input_shape):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels

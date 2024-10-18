@@ -36,10 +36,15 @@ def main(
 ):
     logger = logging.getLogger("train")
 
+    # Dataset
+    ds = RadargramDataset(data_dir, seq_len, patch_len, patch_len, seq_len)
+    dl = DataLoader(ds, batch_size, shuffle=False)
+    _, patch_h, _ = ds[0].shape
+
     # Model
     model_name = model
     in_channels = 2 if pos_enc else 1
-    cfg = [in_channels, hidden_size, n_classes]
+    cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
     model = get_model(model, cfg)
     num_devices = device_count()
     if num_devices >= 2:
@@ -47,10 +52,6 @@ def main(
     model = model.to("cuda")
     model.load_state_dict(torch.load(out_dir + "/latest.pt"))
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
-
-    # Dataset
-    ds = RadargramDataset(data_dir, seq_len, patch_len, patch_len, seq_len)
-    dl = DataLoader(ds, batch_size, shuffle=False)
 
     # Hooks
     hooks = get_hooks(model_name, model, hook_fn)

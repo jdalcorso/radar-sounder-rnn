@@ -50,25 +50,26 @@ def main(
 ):
     logger = logging.getLogger("train")
 
+    # Dataset
+    train_dl, test_dl = get_dataloaders(
+        data_dir, seq_len, patch_len, batch_size, test_size
+    )
+    _, _, patch_h, _ = next(iter(train_dl))[0].shape
+    logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
+    logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
+    logger.info(
+        "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
+    )
+
     # Model
     in_channels = 2 if pos_enc else 1
-    cfg = [in_channels, hidden_size, n_classes]
+    cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
     model = get_model(model, cfg)
     num_devices = device_count()
     if num_devices >= 2:
         model = DataParallel(model)
     model = model.to("cuda")
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
-
-    # Dataset
-    train_dl, test_dl = get_dataloaders(
-        data_dir, seq_len, patch_len, batch_size, test_size
-    )
-    logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
-    logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
-    logger.info(
-        "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
-    )
 
     # # Optimizer
     optimizer = AdamW(model.parameters(), lr)

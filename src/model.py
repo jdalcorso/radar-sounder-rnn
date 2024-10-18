@@ -5,15 +5,7 @@ from nl import NLUNet, NLUNetDecoder, NLUNetEncoder
 
 
 class UNetWrapper(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        hidden_channels,
-        out_channels,
-        n_layers,
-        hidden_scaling,
-        kernel_size,
-    ):
+    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
         super().__init__()
         self.unet = UNet(in_channels, out_channels, hidden_channels)
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
@@ -27,15 +19,7 @@ class UNetWrapper(nn.Module):
 
 
 class NLUNetWrapper(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        hidden_channels,
-        out_channels,
-        n_layers,
-        hidden_scaling,
-        kernel_size,
-    ):
+    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
         super().__init__()
         self.unet = NLUNet(in_channels, out_channels, hidden_channels)
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
@@ -53,16 +37,11 @@ class URNN(nn.Module):
     UNet with a recurrent layer at the bottleneck.
     """
 
-    def __init__(
-        self,
-        in_channels,
-        hidden_channels,
-        out_channels,
-    ):
+    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
         super().__init__()
         self.encoder = UNetEncoder(in_channels, hidden_channels)
         self.decoder = UNetDecoder(hidden_channels, out_channels)
-        self.rnn = ConvLSTM(hidden_channels, hidden_channels)
+        self.rnn = ConvLSTM(hidden_channels, hidden_channels, input_shape)
         self.out_channels = out_channels
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
 
@@ -82,16 +61,11 @@ class NLURNN(nn.Module):
     Also have a recurrent layer at the bottleneck.
     """
 
-    def __init__(
-        self,
-        in_channels,
-        hidden_channels,
-        out_channels,
-    ):
+    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
         super().__init__()
         self.encoder = NLUNetEncoder(in_channels, hidden_channels)
         self.decoder = NLUNetDecoder(hidden_channels, out_channels)
-        self.rnn = ConvRNN(hidden_channels, hidden_channels)
+        self.rnn = ConvLSTM(hidden_channels, hidden_channels, input_shape)
         self.out_channels = out_channels
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
 
