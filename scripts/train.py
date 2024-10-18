@@ -5,7 +5,7 @@ The task is plain supervised semantic segmentation. We plan to use:
 - CNN autoencoder
 - U-Net autoencoder
 - Youtube-VOS-style ConvLSTM autoencoder
-- The same as above with U-net residial bridges
+- The same as above with U-net residual bridges
 Input (and final output) channels are automatically set to be 1 as we are working
 on 1 channel radar sounder data.
 

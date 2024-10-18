@@ -11,7 +11,7 @@ seq_len: 16
 test_size: 0.1
 
 # Train
-epochs: 1
+epochs: 20
 batch_size: 8
 lr: 0.001
 
