@@ -39,7 +39,7 @@ def main(
     # Dataset
     ds = RadargramDataset(data_dir, seq_len, patch_len, patch_len, seq_len)
     dl = DataLoader(ds, batch_size, shuffle=False)
-    _, patch_h, _ = ds[0].shape
+    _, patch_h, _ = ds[0][0].shape
 
     # Model
     model_name = model
