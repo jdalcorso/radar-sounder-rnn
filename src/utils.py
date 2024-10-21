@@ -122,7 +122,7 @@ def show_feature_maps(maps, out_dir):
         img = img.view(H, W, 3)  # HW3
         mi, ma = img.min(), img.max()
         img = (img - mi) / (ma - mi)
-        axes[i].imshow(img.numpy(), aspect="auto")
+        axes[i].imshow(img.numpy(), aspect="auto", interpolation="nearest")
         axes[i].axis("off")
     plt.savefig(out_dir + "/maps.png")
     plt.close()
