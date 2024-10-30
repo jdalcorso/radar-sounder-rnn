@@ -1,0 +1,20 @@
+# Model
+hidden_size: 128
+n_classes: 4
+pos_enc: True
+
+# Dataset
+data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
+patch_len: 32
+seq_len: 8
+test_size: 0.1
+
+# Train
+epochs: 20
+batch_size: 64
+lr: 0.001
+
+# Log
+out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
+log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
+log_level: info
