@@ -11,7 +11,7 @@ import torch
 
 from torch.cuda import device_count
 from torch.nn import DataParallel
-from torch.nn.functional import cross_entropy
+from torch.nn.functional import cross_entropy, softmax
 from torch.optim import AdamW
 
 from model import NLURNNCell
@@ -78,29 +78,43 @@ def main(
         for _, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
             seq = pos_encode(seq) if pos_enc else seq
+            seq = torch.cat([seq, torch.flip(seq, dims=(1, -1))], dim=1)  # B(2T)CHW
             label = item[1].to("cuda").long()  # BTHW
             preds = []
             hidden, cell = None, None
             optimizer.zero_grad()
             loss = 0
-            for i in range(seq_len):
+            for i in range(seq_len * 2):
                 pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
                 preds.append(pred.unsqueeze(1))  # B1CHW * T
+                # preds has len = seq_len when going in 2nd if
                 if i == 0:
                     loss += cross_entropy(pred, label[:, 0], class_weights)
-                    weak = label[:, 0]  # BHW, can be replaced w/ pred.argmax(1)
-                else:
-                    w = 0.1  # TODO
-                    loss += w * cross_entropy(pred, weak, class_weights)
+                if i >= seq_len and i != seq_len * 2 - 1:
+                    loss += cross_entropy(
+                        pred,
+                        softmax(
+                            torch.flip(
+                                preds[2 * seq_len - i - 1].squeeze(1), dims=(-1,)
+                            ),
+                            dim=1,
+                        ),
+                        class_weights,
+                    )
+                if i == seq_len * 2 - 1:
+                    loss += cross_entropy(
+                        pred, torch.flip(label[:, 0], dims=(-1,)), class_weights
+                    )
+
             loss_train.append(loss)
             loss.backward()
             optimizer.step()
 
         preds = torch.cat(preds, 1)  # BTCHW
         plot_results(
-            seq[0],
+            seq[0, :seq_len],
             label[0],
-            preds[0].argmax(1),  # THW
+            preds[0, :seq_len].argmax(1),  # THW
             out_dir + "/train" + str(epoch + 1) + ".png",
         )
 
@@ -119,20 +133,3 @@ if __name__ == "__main__":
         "Training",
         main,
     )
-
-# for i in range(0, seq.shape[1]):
-#     sub = torch.cat(
-#         [seq[:, : i + 1], torch.flip(seq[:, : i + 1], dims=(1, -1))], dim=1
-#     )  # B(2i)CHW
-#     pred = model(sub)  # BTCHW
-#     print(pred.shape)
-#     loss = cross_entropy(
-#         torch.flip(pred[:, -1], dims=(-1,)),  # BCHW
-#         label[:, 0],
-#         # weight=torch.tensor([0.36, 0.04, 0.54, 0.06]).to("cuda"),
-#     )
-#     # Optimize
-#     optimizer.zero_grad()
-#     loss.backward()
-#     optimizer.step()
-#     loss_train.append(loss)
