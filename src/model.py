@@ -1,5 +1,5 @@
 import torch.nn as nn
-from rnn import ConvLSTM, ConvRNN
+from rnn import ConvLSTM, ConvLSTMCell, ConvRNN
 from unet import UNet, UNetDecoder, UNetEncoder
 from nl import NLUNet, NLUNetDecoder, NLUNetEncoder
 
@@ -77,3 +77,21 @@ class NLURNN(nn.Module):
         x5, _ = self.rnn(x5.view(B, T, C, h, w))  # BTChw
         x = self.decoder(x1, x2, x3, x4, x5.view((-1, C, h, w)))
         return x.view(B, T, self.out_channels, H, W)
+
+
+class NLURNNCell(nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
+        super().__init__()
+        self.encoder = NLUNetEncoder(in_channels, hidden_channels)
+        self.decoder = NLUNetDecoder(hidden_channels, out_channels)
+        self.rnncell = ConvLSTMCell(hidden_channels, hidden_channels, input_shape)
+        self.out_channels = out_channels
+        self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def forward(self, x, hidden=None, cell=None):
+        B, c, H, W = x.shape  # BcHW
+        x1, x2, x3, x4, x5 = self.encoder(x)
+        _, C, h, w = x5.shape  # BChw
+        x5, cell = self.rnncell(x5, hidden, cell)  # BChw
+        x = self.decoder(x1, x2, x3, x4, x5)  # B1HW
+        return x, x5, cell
