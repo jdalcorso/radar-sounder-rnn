@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Weak Training script.
+Cycle-Consistency and Weak label-based training script.
 
 @author: Jordy Dal Corso
 """
 import time
 import logging
 import scripting
-import torch
 
+from torch import tensor, cat, flip, save
 from torch.cuda import device_count
 from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy, softmax
@@ -63,10 +63,10 @@ def main(
     model = model.to("cuda")
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
-    # # Optimizer
+    # Optimizer
     optimizer = AdamW(model.parameters(), lr)
 
-    # Train and validation
+    # Train
     loss_train_tot = []
     for epoch in range(epochs):
         t0 = time.time()
@@ -74,45 +74,63 @@ def main(
 
         # Train
         model.train(True)
-        class_weights = torch.tensor([0.36, 0.04, 0.54, 0.06]).to("cuda")
+        class_weights = tensor([0.26, 0.04, 0.64, 0.06]).to("cuda")
+
         for _, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
             seq = pos_encode(seq) if pos_enc else seq
+            seq = cat([seq, flip(seq, dims=(1, -1))], dim=1)  # B(2T)CHW, CycleC
             label = item[1].to("cuda").long()  # BTHW
             preds = []
             hidden, cell = None, None
             optimizer.zero_grad()
             loss = 0
-            for i in range(seq_len):
+            for i in range(seq_len * 2):
                 pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
                 preds.append(pred.unsqueeze(1))  # B1CHW * T
                 if i == 0:
                     loss += cross_entropy(pred, label[:, 0], class_weights)
-                    weak = label[:, 0]  # BHW, can be replaced w/ pred.argmax(1)
-                else:
+                    weak = label[:, 0]
+                # Cycle-consistency
+                if i >= seq_len and i != seq_len * 2 - 1:
+                    loss += cross_entropy(
+                        pred,
+                        softmax(
+                            flip(preds[2 * seq_len - i - 1].squeeze(1), dims=(-1,)),
+                            dim=1,
+                        ),
+                        class_weights,
+                    )
+                if i == seq_len * 2 - 1:
+                    loss += cross_entropy(
+                        pred, flip(label[:, 0], dims=(-1,)), class_weights
+                    )
+                # Previous label as weak
+                if i > 0:
                     w = 0.1  # TODO
                     loss += w * cross_entropy(pred, weak, class_weights)
                     weak = softmax(pred, dim=1)
+
             loss_train.append(loss)
             loss.backward()
             optimizer.step()
 
-        preds = torch.cat(preds, 1)  # BTCHW
+        preds = cat(preds, 1)  # BTCHW
         plot_results(
-            seq[0],
+            seq[0, :seq_len],
             label[0],
-            preds[0].argmax(1),  # THW
+            preds[0, :seq_len].argmax(1),  # THW
             out_dir + "/train" + str(epoch + 1) + ".png",
         )
 
-        loss_train = torch.tensor(loss_train).mean()
+        loss_train = tensor(loss_train).mean()
         loss_train_tot.append(loss_train)
 
         logger_str = "Epoch: {}, Loss train: {:.3f}, Time: {:.3f}"
         logger.info(logger_str.format(epoch + 1, loss_train.item(), time.time() - t0))
 
     plot_loss(loss_train_tot, loss_train_tot, out_dir)
-    torch.save(model.state_dict(), out_dir + "/latest.pt")
+    save(model.state_dict(), out_dir + "/latest.pt")
 
 
 if __name__ == "__main__":
