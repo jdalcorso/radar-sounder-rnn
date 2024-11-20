@@ -9,7 +9,7 @@ data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
 patch_len: 32
 seq_len: 16
 test_size: 0.1
-seed: 9
+seed: 10
 
 # Train
 epochs: 50
