@@ -28,7 +28,7 @@ def plot_loss(loss_train, loss_val, out_dir):
     plt.close()
 
 
-def get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size):
+def get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size, seed):
     dataset = RadargramDataset(
         dataset_path=data_dir,
         seq_len=seq_len,
@@ -37,7 +37,8 @@ def get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size):
         seq_stride=seq_len,
     )
 
-    train_ds, test_ds = random_split(dataset, (1 - test_size, test_size))
+    generator = torch.Generator().manual_seed(seed)
+    train_ds, test_ds = random_split(dataset, (1 - test_size, test_size), generator)
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
     return train_dl, test_dl

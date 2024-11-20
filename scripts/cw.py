@@ -33,6 +33,7 @@ def main(
     patch_len,
     seq_len,
     test_size,
+    seed,
     epochs,
     batch_size,
     lr,
@@ -44,7 +45,7 @@ def main(
 
     # Dataset
     train_dl, test_dl = get_dataloaders(
-        data_dir, seq_len, patch_len, batch_size, test_size
+        data_dir, seq_len, patch_len, batch_size, test_size, seed
     )
     _, _, patch_h, _ = next(iter(train_dl))[0].shape
     logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))

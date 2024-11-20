@@ -1,5 +1,5 @@
 # Model
-model: ur
+model: nlur
 hidden_size: 128
 n_classes: 4
 pos_enc: False
@@ -9,7 +9,7 @@ data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
 patch_len: 32
 seq_len: 16
 test_size: 0.5
-seed: 0
+seed: 4
 
 # Test
 batch_size: 64
