@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 from model import UNetWrapper, NLUNetWrapper, URNN, NLURNN
+from aspp import UNetASPPWrapper
 from dataset import RadargramDataset
 
 
@@ -17,6 +18,8 @@ def get_model(model, cfg):
             model = URNN(*cfg)
         case "nlur":
             model = NLURNN(*cfg)
+        case "aspp":
+            model = UNetASPPWrapper(*cfg)
     return model
 
 
@@ -103,6 +106,9 @@ def get_hooks(model_name, model, hook_fn):
             for layer in model.module.encoder.children():
                 hooks.append(layer.register_forward_hook(hook_fn))
             for layer in model.module.decoder.children():
+                hooks.append(layer.register_forward_hook(hook_fn))
+        case "aspp":
+            for layer in model.module.unet.children():
                 hooks.append(layer.register_forward_hook(hook_fn))
     return hooks
 
