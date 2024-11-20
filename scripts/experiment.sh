@@ -15,7 +15,7 @@ fi
 echo -n > $log_dir/latest_experiment.txt
 
 # Whether to manually set model paramters
-model='nlur'
+model='aspp'
 sed -i "s|model: .*|model: $model|g" $script_dir/config_files/$train_script.yaml
 sed -i "s|model: .*|model: $model|g" $script_dir/config_files/$test_script.yaml
 
