@@ -74,7 +74,9 @@ class NLURNN(nn.Module):
         x = x.flatten(0, 1)  # (BT)cHW
         x1, x2, x3, x4, x5 = self.encoder(x)
         _, C, h, w = x5.shape  # BTChw
-        x5, _ = self.rnn(x5.view(B, T, C, h, w))  # BTChw
+        x5 = x5.view(B, T, C, h, w)
+        x6, _ = self.rnn(x5)  # BTChw
+        x5 = x5 + x6
         x = self.decoder(x1, x2, x3, x4, x5.view((-1, C, h, w)))
         return x.view(B, T, self.out_channels, H, W)
 
@@ -92,6 +94,7 @@ class NLURNNCell(nn.Module):
         B, c, H, W = x.shape  # BcHW
         x1, x2, x3, x4, x5 = self.encoder(x)
         _, C, h, w = x5.shape  # BChw
-        x5, cell = self.rnncell(x5, hidden, cell)  # BChw
+        x6, cell = self.rnncell(x5, hidden, cell)  # BChw
+        x5 = x5 + x6
         x = self.decoder(x1, x2, x3, x4, x5)  # B1HW
         return x, x5, cell
