@@ -2,7 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 
-""" Refactored from https://github.com/Hzzone/Precipitation-Nowcasting"""
+""" 
+ConvLSTM is refactored from https://github.com/Hzzone/Precipitation-Nowcasting.
+ConvRNN is custom made.
+"""
 
 
 class ConvLSTM(nn.Module):
