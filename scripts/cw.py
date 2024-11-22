@@ -75,7 +75,7 @@ def main(
 
         # Train
         model.train(True)
-        class_weights = tensor([0.26, 0.04, 0.64, 0.06]).to("cuda")
+        class_weights = tensor([0.26, 0.04, 0.74, 0.06]).to("cuda")
 
         for _, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
@@ -90,11 +90,11 @@ def main(
                 pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
                 preds.append(pred.unsqueeze(1))  # B1CHW * T
                 if i == 0:
-                    loss += cross_entropy(pred, label[:, 0], class_weights)
+                    # loss += cross_entropy(pred, label[:, 0], class_weights)
                     weak = label[:, 0]
                 # Cycle-consistency
                 if i >= seq_len and i != seq_len * 2 - 1:
-                    loss += cross_entropy(
+                    loss += ((seq_len * 2) * 0.1 - i * 0.1 + 0.1) * cross_entropy(
                         pred,
                         softmax(
                             flip(preds[2 * seq_len - i - 1].squeeze(1), dims=(-1,)),

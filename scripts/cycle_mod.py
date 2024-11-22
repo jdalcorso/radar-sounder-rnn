@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Cycle-Consistency-based training script.
+Modified Cycle-Consistency-based training script.
+Cycles are constructed always starting from the same column
+with sequences of increasing length as per the original CRW
+paper: https://arxiv.org/abs/2006.14613
 
 @author: Jordy Dal Corso
 """
@@ -79,37 +82,42 @@ def main(
         for _, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
             seq = pos_encode(seq) if pos_enc else seq
-            seq = torch.cat([seq, torch.flip(seq, dims=(1, -1))], dim=1)  # B(2T)CHW
             label = item[1].to("cuda").long()  # BTHW
-            preds = []
-            hidden, cell = None, None
-            optimizer.zero_grad()
-            loss = 0
-            for i in range(seq_len * 2):
-                pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
-                preds.append(pred.unsqueeze(1))  # B1CHW * T
-                # preds has len = seq_len when going in 2nd if
-                # if i == 0:
-                #    loss += cross_entropy(pred, label[:, 0], class_weights)
-                if i >= seq_len and i != seq_len * 2 - 1:
-                    loss += ((seq_len * 2) * 0.1 - i * 0.1 + 0.1) * cross_entropy(
-                        pred,
-                        softmax(
-                            torch.flip(
-                                preds[2 * seq_len - i - 1].squeeze(1), dims=(-1,)
+            for sub_len in range(1, seq_len):  # to create each sub-sequence
+                sub = torch.cat(
+                    [seq[:, :sub_len], torch.flip(seq[:, :sub_len], dims=(1, -1))],
+                    dim=1,
+                )  # B(2T)CHW
+                preds = []
+                hidden, cell = None, None
+                optimizer.zero_grad()
+                loss = 0
+                for i in range(sub_len * 2):  # iterate on the sub-sequence
+                    pred, hidden, cell = model(sub[:, i], hidden, cell)  # BCHW
+                    preds.append(pred.unsqueeze(1))  # B1CHW * T
+                    # First with reference
+                    if i == 0:
+                        loss += cross_entropy(pred, label[:, 0], class_weights)
+                    # Intermediate
+                    if i >= sub_len and i != sub_len * 2 - 1:
+                        loss += cross_entropy(
+                            pred,
+                            softmax(
+                                torch.flip(
+                                    preds[2 * sub_len - i - 1].squeeze(1), dims=(-1,)
+                                ),
+                                dim=1,
                             ),
-                            dim=1,
-                        ),
-                        class_weights,
-                    )
-                if i == seq_len * 2 - 1:
-                    loss += cross_entropy(
-                        pred, torch.flip(label[:, 0], dims=(-1,)), class_weights
-                    )
-
+                            class_weights,
+                        )
+                    # Last with first
+                    if i == sub_len * 2 - 1:
+                        loss += cross_entropy(
+                            pred, torch.flip(label[:, 0], dims=(-1,)), class_weights
+                        )
+                loss.backward()
+                optimizer.step()
             loss_train.append(loss)
-            loss.backward()
-            optimizer.step()
 
         preds = torch.cat(preds, 1)  # BTCHW
         plot_results(
