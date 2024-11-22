@@ -3,12 +3,16 @@ import numpy
 import random
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
-from model import UNetWrapper, NLUNetWrapper, URNN, NLURNN
+from model import UNetWrapper, NLUNetWrapper, URNN, NLURNN, NLURNN1D
 from aspp import UNetASPPWrapper
 from dataset import RadargramDataset
 
 
 def get_model(model, cfg):
+    """
+    Input: model configuration
+    Output: model Module object
+    """
     match model:
         case "u":
             model = UNetWrapper(*cfg)
@@ -17,13 +21,19 @@ def get_model(model, cfg):
         case "ur":
             model = URNN(*cfg)
         case "nlur":
-            model = NLURNN(*cfg)
+            if cfg[3][1] != 1:
+                model = NLURNN(*cfg)
+            else:
+                model = NLURNN1D(*cfg)
         case "aspp":
             model = UNetASPPWrapper(*cfg)
     return model
 
 
 def plot_loss(loss_train, loss_val, out_dir):
+    """
+    Wrapper for line plotting utilities.
+    """
     plt.plot(loss_train)
     plt.plot(loss_val)
     plt.legend(["loss train", "loss validation"])
@@ -32,6 +42,10 @@ def plot_loss(loss_train, loss_val, out_dir):
 
 
 def get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size, seed):
+    """
+    Creates a dataset with the given input configuration, then creates dataloaders
+    for test and training using a random split.
+    """
     dataset = RadargramDataset(
         dataset_path=data_dir,
         seq_len=seq_len,
@@ -48,6 +62,9 @@ def get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size, seed):
 
 
 def plot_results(seq, label, pred, name):
+    """
+    Utility for plotting qualitative results.
+    """
     # seq, label, pred has to be THW (seq TCHW -> THW)
     seq = seq[:, 0] if len(seq.shape) > 3 else seq
     T = seq.shape[0]

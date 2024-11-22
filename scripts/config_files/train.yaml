@@ -6,8 +6,8 @@ pos_enc: False
 
 # Dataset
 data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
-patch_len: 48
-seq_len: 64
+patch_len: 1
+seq_len: 32
 test_size: 0.1
 seed: 0
 
