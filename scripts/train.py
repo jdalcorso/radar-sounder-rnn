@@ -82,7 +82,7 @@ def main(
 
         # Train
         model.train(True)
-        for _, item in enumerate(train_dl):
+        for batch, item in enumerate(train_dl):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
             seq = pos_encode(seq) if pos_enc else seq
             label = item[1].to("cuda").long()  # BTHW
@@ -91,7 +91,7 @@ def main(
                 pred.flatten(0, 1),
                 label.flatten(0, 1),
                 weight=torch.tensor([0.36, 0.04, 0.54, 0.06]).to("cuda"),
-            )  # weight=torch.tensor([0.04,0.2,0.18,0.54,0.04]).to('cuda') [0.36,0.04,0.54,0.06]
+            )
             loss_train.append(loss)
             # Optimize
             optimizer.zero_grad()
@@ -107,19 +107,20 @@ def main(
         # Validation
         loss_val = []
         model.train(False)
-        for _, item in enumerate(test_dl):
-            seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
-            seq = pos_encode(seq) if pos_enc else seq
-            label = item[1].to("cuda").long()
-            pred = model(seq)
-            loss_t = cross_entropy(pred.flatten(0, 1), label.flatten(0, 1))
-            loss_val.append(loss_t)
-        plot_results(
-            seq[0],
-            label[0],
-            pred[0].argmax(1),
-            out_dir + "/val" + str(epoch + 1) + ".png",
-        )
+        with torch.no_grad():
+            for _, item in enumerate(test_dl):
+                seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
+                seq = pos_encode(seq) if pos_enc else seq
+                label = item[1].to("cuda").long()
+                pred = model(seq)
+                loss_t = cross_entropy(pred.flatten(0, 1), label.flatten(0, 1))
+                loss_val.append(loss_t)
+            plot_results(
+                seq[0],
+                label[0],
+                pred[0].argmax(1),
+                out_dir + "/val" + str(epoch + 1) + ".png",
+            )
 
         loss_train, loss_val = (
             torch.tensor(loss_train).mean(),
