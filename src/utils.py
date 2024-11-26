@@ -68,16 +68,34 @@ def plot_results(seq, label, pred, name):
     # seq, label, pred has to be THW (seq TCHW -> THW)
     seq = seq[:, 0] if len(seq.shape) > 3 else seq
     T = seq.shape[0]
-    fig, axes = plt.subplots(3, T, figsize=(20, 20))
-    for i in range(T):
-        axes[0, i].imshow(seq[i].cpu().numpy(), cmap="gray", aspect="auto")
-        axes[0, i].axis("off")
-        axes[1, i].imshow(
-            label[i].cpu().numpy(), aspect="auto", interpolation="nearest"
-        )
-        axes[1, i].axis("off")
-        axes[2, i].imshow(pred[i].cpu().numpy(), aspect="auto", interpolation="nearest")
-        axes[2, i].axis("off")
+    if seq.shape[-1] != 1:
+        fig, axes = plt.subplots(3, T, figsize=(20, 20))
+        for i in range(T):
+            axes[0, i].imshow(seq[i].cpu().numpy(), cmap="gray", aspect="auto")
+            axes[0, i].axis("off")
+            axes[1, i].imshow(
+                label[i].cpu().numpy(), aspect="auto", interpolation="nearest"
+            )
+            axes[1, i].axis("off")
+            axes[2, i].imshow(
+                pred[i].cpu().numpy(), aspect="auto", interpolation="nearest"
+            )
+            axes[2, i].axis("off")
+    else:
+        fig, axes = plt.subplots(3, 1, figsize=(20, 20))
+        S = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+        L = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+        P = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+        for i in range(T):
+            S[:, i] = seq[i].squeeze()
+            L[:, i] = label[i].squeeze()
+            P[:, i] = pred[i].squeeze()
+        axes[0].imshow(S.cpu().numpy(), cmap="gray", aspect="auto")
+        axes[0].axis("off")
+        axes[1].imshow(L.cpu().numpy(), aspect="auto", interpolation="nearest")
+        axes[1].axis("off")
+        axes[2].imshow(P.cpu().numpy(), aspect="auto", interpolation="nearest")
+        axes[2].axis("off")
     plt.tight_layout()
     plt.savefig(name)
     plt.close()

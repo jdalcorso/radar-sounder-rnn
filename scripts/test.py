@@ -57,17 +57,19 @@ def main(
     model.train(False)
     labels = []
     preds = []
-    for _, item in enumerate(dl):
-        seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-        seq = pos_encode(seq) if pos_enc else seq
-        labels.append(item[1].long().flatten(0, 1))  # (BT)HW
-        preds.append(model(seq).squeeze(2).argmax(2).flatten(0, 1))  # (BT)HW
+    with torch.no_grad():
+        for _, item in enumerate(dl):
+            seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
+            seq = pos_encode(seq) if pos_enc else seq
+            labels.append(item[1].long().flatten(0, 1))  # (BT)HW
+            preds.append(model(seq).squeeze(2).argmax(2).flatten(0, 1))  # (BT)HW
 
     labels = torch.cat(labels, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)
     preds = torch.cat(preds, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)
     torch.save(preds.byte(), out_dir + "/pred.pt")
 
-    show_feature_maps(hooked_outputs[: 2 * len(hooks)], out_dir)
+    if patch_len > 1:
+        show_feature_maps(hooked_outputs[: 2 * len(hooks)], out_dir)
     print("Classification report:\n")
     report = classification_report(
         labels.flatten(), preds.flatten().cpu(), output_dict=True

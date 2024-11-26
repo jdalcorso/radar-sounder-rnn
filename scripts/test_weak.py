@@ -58,16 +58,17 @@ def main(
     model.train(False)
     labels = []
     preds = []
-    for _, item in enumerate(dl):
-        seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BT1HW
-        seq = pos_encode(seq) if pos_enc else seq
-        labels.append(item[1].long().flatten(0, 1))  # (BT)HW
-        this_preds, hidden, cell = [], None, None
-        for i in range(seq_len):
-            pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
-            this_preds.append(pred.unsqueeze(1))  # B1CHW * T
-        this_preds = torch.cat(this_preds, dim=1)  # BTCHW
-        preds.append(this_preds.argmax(2).flatten(0, 1))  # (BT)HW
+    with torch.no_grad():
+        for _, item in enumerate(dl):
+            seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BT1HW
+            seq = pos_encode(seq) if pos_enc else seq
+            labels.append(item[1].long().flatten(0, 1))  # (BT)HW
+            this_preds, hidden, cell = [], None, None
+            for i in range(seq_len):
+                pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
+                this_preds.append(pred.unsqueeze(1))  # B1CHW * T
+            this_preds = torch.cat(this_preds, dim=1)  # BTCHW
+            preds.append(this_preds.argmax(2).flatten(0, 1))  # (BT)HW
 
     labels = torch.cat(labels, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)
     preds = torch.cat(preds, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)

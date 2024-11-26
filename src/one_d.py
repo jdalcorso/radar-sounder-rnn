@@ -8,6 +8,7 @@ We put here a model (NLURNN1D) which operates on sequences
 of rangelines (ablation study in the proposed paper).
 """
 
+
 class NL1D1D(nn.Module):
     """Input should be BCHW, output is BCHW"""
 
@@ -169,29 +170,3 @@ class ConvLSTM1D(nn.Module):
             c_final.append(c.unsqueeze(1))  # B1CH1
 
         return torch.cat(h_final, dim=1), torch.cat(c_final, dim=1)  # BTCH1 * 2
-
-
-class NLURNN1D(nn.Module):
-    """
-    UNet with non-local operation instead of 2nd convolution for each block.
-    Also have a recurrent layer at the bottleneck.
-    """
-
-    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
-        super().__init__()
-        self.encoder = NLUNetEncoder1D(in_channels, hidden_channels)
-        self.decoder = NLUNetDecoder1D(hidden_channels, out_channels)
-        self.rnn = ConvLSTM1D(hidden_channels, hidden_channels, input_shape)
-        self.out_channels = out_channels
-        self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
-
-    def forward(self, x):
-        B, T, c, H, W = x.shape
-        x = x.flatten(0, 1)  # (BT)cH1
-        x1, x2, x3, x4, x5 = self.encoder(x)
-        _, C, h, w = x5.shape  # BTCh1
-        x5 = x5.view(B, T, C, h, w)
-        x6, _ = self.rnn(x5)  # BTCh1
-        x5 = x5 + x6
-        x = self.decoder(x1, x2, x3, x4, x5.view((-1, C, h, w)))
-        return x.view(B, T, self.out_channels, H, W)

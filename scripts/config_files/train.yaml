@@ -1,19 +1,19 @@
 # Model
-model: nlur
+model: aspp
 hidden_size: 128
 n_classes: 4
 pos_enc: False
 
 # Dataset
 data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
-patch_len: 1
-seq_len: 32
-test_size: 0.1
+patch_len: 32
+seq_len: 16
+test_size: 0.9
 seed: 0
 
 # Train
 epochs: 50
-batch_size: 4
+batch_size: 64
 lr: 0.001
 
 # Log
