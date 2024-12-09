@@ -82,21 +82,7 @@ def main(
 
         # Train
         model.train(True)
-        for batch, item in enumerate(train_dl):
-            seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-            seq = pos_encode(seq) if pos_enc else seq
-            label = item[1].to("cuda").long()  # BTHW
-            pred = model(seq).squeeze(2)  # BTCHW
-            loss = cross_entropy(
-                pred.flatten(0, 1),
-                label.flatten(0, 1),
-                weight=torch.tensor([0.36, 0.04, 0.54, 0.06]).to("cuda"),
-            )
-            loss_train.append(loss)
-            # Optimize
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        seq, label, pred = train(model, optimizer, train_dl, pos_enc)
         plot_results(
             seq[0],
             label[0],
@@ -138,6 +124,27 @@ def main(
 
     plot_loss(loss_train_tot, loss_val_tot, out_dir)
     torch.save(model.state_dict(), out_dir + "/latest.pt")
+
+
+@torch.compile
+def train(model, optimizer, dataloader, pos_enc):
+    loss_train = []
+    for batch, item in enumerate(dataloader):
+        seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
+        seq = pos_encode(seq) if pos_enc else seq
+        label = item[1].to("cuda").long()  # BTHW
+        pred = model(seq).squeeze(2)  # BTCHW
+        loss = cross_entropy(
+            pred.flatten(0, 1),
+            label.flatten(0, 1),
+            weight=torch.tensor([0.36, 0.04, 0.54, 0.06]).to("cuda"),
+        )
+        loss_train.append(loss)
+        # Optimize
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        return seq, label, pred
 
 
 if __name__ == "__main__":
