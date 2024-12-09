@@ -47,7 +47,7 @@ class ConvNL(nn.Module):
         self.nl = NL1D(out_channels, out_channels)  # TODO
 
     def forward(self, x):
-        if x.shape[-1] == 1:  # to deal with w=16
+        if x.shape[-1] == 1:  # to deal with w = 16
             x = x.repeat([1, 1, 1, 3])
         x = self.conv(x)
         return self.nl(x)

@@ -13,7 +13,7 @@ seed: 0
 
 # Train
 epochs: 20
-batch_size: 4
+batch_size: 32
 lr: 0.001
 
 # Log
