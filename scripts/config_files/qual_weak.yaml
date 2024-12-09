@@ -7,7 +7,7 @@ pos_enc: False
 data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
 patch_len: 32
 seq_len: 100
-seed: 1
+seed: 0
 
 # Qualitative
 batch_size: 3

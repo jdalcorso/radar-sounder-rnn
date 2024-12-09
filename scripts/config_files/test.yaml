@@ -1,5 +1,5 @@
 # Model
-model: aspp
+model: nlur
 hidden_size: 128
 n_classes: 4
 pos_enc: False
@@ -8,11 +8,11 @@ pos_enc: False
 data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
 patch_len: 32
 seq_len: 16
-test_size: 0.9
+test_size: 0.1
 seed: 0
 
 # Test
-batch_size: 32
+batch_size: 4
 
 # Log
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log

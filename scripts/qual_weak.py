@@ -43,30 +43,8 @@ def main(
 
     preds = []
 
-    # Fully-supervised
-    # Model
-    model_name = "aspp"
-    in_channels = 2 if pos_enc else 1
-    cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
-    model = get_model(model_name, cfg)
-    num_devices = device_count()
-    if num_devices >= 2:
-        model = DataParallel(model)
-    model = model.to("cuda")
-    model.load_state_dict(torch.load(out_dir + "/latest_" + model_name + ".pt"))
-
-    # Test
-    model.train(False)
-    with torch.no_grad():
-        item = next(iter(dl))
-        seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-        seq = pos_encode(seq) if pos_enc else seq
-        rgrams = item[0]  # BTHW
-        labels = item[1].long()  # BTHW
-        preds.append(model(seq).squeeze(2).argmax(2))  # BTHW x 3
-
     # Weakly-supervised
-    for model in ["wcc", "wcmod"]:
+    for model in ["cdouble", "wcmod"]:
         # Model
         model_name = model
         in_channels = 2 if pos_enc else 1
@@ -89,8 +67,29 @@ def main(
                 pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
                 this_preds.append(pred.unsqueeze(1))  # B1CHW * T
             this_preds = torch.cat(this_preds, dim=1)  # BTCHW
-            print(this_preds.shape)
             preds.append(this_preds.argmax(2))  # (BT)HW
+
+    # Fully-supervised
+    # Model
+    model_name = "aspp"
+    in_channels = 2 if pos_enc else 1
+    cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
+    model = get_model(model_name, cfg)
+    num_devices = device_count()
+    if num_devices >= 2:
+        model = DataParallel(model)
+    model = model.to("cuda")
+    model.load_state_dict(torch.load(out_dir + "/latest_" + model_name + ".pt"))
+
+    # Test
+    model.train(False)
+    with torch.no_grad():
+        item = next(iter(dl))
+        seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
+        seq = pos_encode(seq) if pos_enc else seq
+        rgrams = item[0]  # BTHW
+        labels = item[1].long()  # BTHW
+        preds.append(model(seq).squeeze(2).argmax(2))  # BTHW x 3
 
     rgrams = rgrams.permute([0, 2, 1, 3]).flatten(-2, -1).cpu()  # BHW
     labels = labels.permute([0, 2, 1, 3]).flatten(-2, -1).cpu()  # BHW
@@ -176,7 +175,7 @@ def main(
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.09)
 
-    plt.savefig(out_dir + "/qual_weakly.png", dpi=300)
+    plt.savefig(out_dir + "/qual_weakly.pdf", dpi=300)
     plt.close()
 
 

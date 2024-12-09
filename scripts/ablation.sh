@@ -15,7 +15,7 @@ sed -i "s|model: .*|model: $model|g" $script_dir/config_files/$train_script.yaml
 sed -i "s|model: .*|model: $model|g" $script_dir/config_files/$test_script.yaml
 
 # Multi-seed experiment
-for PATCH in 8 16 32 48
+for PATCH in 16 32 64
 do
     for SEQ in 4 8 16 32 64
     do
