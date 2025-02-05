@@ -37,6 +37,9 @@ class RadargramDataset(Dataset):
             else:
                 rg_path.append(file)
 
+        rg_path = sorted(rg_path)
+        sg_path = sorted(sg_path)
+        
         # Get items
         rgs = []
         sgs = []

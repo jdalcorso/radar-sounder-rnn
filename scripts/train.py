@@ -82,7 +82,8 @@ def main(
 
         # Train
         model.train(True)
-        seq, label, pred = train(model, optimizer, train_dl, pos_enc)
+        seq, label, pred, loss_tr = train(model, optimizer, train_dl, pos_enc)
+        loss_train.append(loss_tr)
         plot_results(
             seq[0],
             label[0],
@@ -137,14 +138,13 @@ def train(model, optimizer, dataloader, pos_enc):
         loss = cross_entropy(
             pred.flatten(0, 1),
             label.flatten(0, 1),
-            weight=torch.tensor([0.36, 0.04, 0.54, 0.06]).to("cuda"),
         )
         loss_train.append(loss)
         # Optimize
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        return seq, label, pred
+        return seq, label, pred, loss_train
 
 
 if __name__ == "__main__":
