@@ -72,7 +72,7 @@ def main(
         show_feature_maps(hooked_outputs[: 2 * len(hooks)], out_dir)
     print("Classification report:\n")
     report = classification_report(
-        labels.flatten(), preds.flatten().cpu(), output_dict=True
+        labels.flatten(), preds.flatten().cpu()
     )
     print(report)
     print("Confusion matrix:\n")

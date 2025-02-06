@@ -1,11 +1,11 @@
 # Model
 model: nlur
 hidden_size: 128
-n_classes: 4
+n_classes: 5
 pos_enc: False
 
 # Dataset
-data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
+data_dir: /home/jordydalcorso/workspace/datasets/MCORDS3_Miguel/tif
 patch_len: 32
 seq_len: 16
 test_size: 0.1
