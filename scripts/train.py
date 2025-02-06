@@ -38,7 +38,7 @@ def main(
     pos_enc,
     patch_len,
     seq_len,
-    test_size,
+    split,
     seed,
     epochs,
     batch_size,
@@ -52,12 +52,12 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
-    train_dl, test_dl = get_dataloaders(
-        data_dir, seq_len, patch_len, batch_size, test_size, seed
+    train_dl, val_dl, _ = get_dataloaders(
+        data_dir, seq_len, patch_len, batch_size, split, seed
     )
     _, _, patch_h, _ = next(iter(train_dl))[0].shape
     logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
-    logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
+    logger.info("Number of sequences VAL : {}".format(batch_size * len(val_dl)))
     logger.info(
         "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
     )
@@ -101,7 +101,7 @@ def main(
         loss_val = []
         model.train(False)
         with torch.no_grad():
-            for _, item in enumerate(test_dl):
+            for _, item in enumerate(val_dl):
                 seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
                 seq = pos_encode(seq) if pos_enc else seq
                 label = item[1].to("cuda").long()

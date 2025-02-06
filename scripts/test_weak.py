@@ -26,9 +26,10 @@ def main(
     pos_enc,
     patch_len,
     seq_len,
-    test_size,
+    split,
     seed,
     batch_size,
+    return_dict,
     data_dir,
     out_dir,
     **kwargs,
@@ -36,7 +37,7 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
-    _, dl = get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size, seed)
+    _, _, dl = get_dataloaders(data_dir, seq_len, patch_len, batch_size, split, seed)
     _, _, patch_h, _ = next(iter(dl))[0].shape
 
     # Model
@@ -77,7 +78,7 @@ def main(
     show_feature_maps(hooked_outputs[: 2 * len(hooks)], out_dir)
     print("Classification report:\n")
     report = classification_report(
-        labels.flatten(), preds.flatten().cpu(), output_dict=True
+        labels.flatten(), preds.flatten().cpu(), output_dict=return_dict
     )
     print(report)
     print("Confusion matrix:\n")

@@ -35,7 +35,7 @@ def main(
     pos_enc,
     patch_len,
     seq_len,
-    test_size,
+    split,
     seed,
     epochs,
     batch_size,
@@ -47,12 +47,12 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
-    train_dl, test_dl = get_dataloaders(
-        data_dir, seq_len, patch_len, batch_size, test_size, seed
+    train_dl, val_dl, _ = get_dataloaders(
+        data_dir, seq_len, patch_len, batch_size, split, seed
     )
     _, _, patch_h, _ = next(iter(train_dl))[0].shape
     logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
-    logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
+    logger.info("Number of sequences TEST : {}".format(batch_size * len(val_dl)))
     logger.info(
         "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
     )
