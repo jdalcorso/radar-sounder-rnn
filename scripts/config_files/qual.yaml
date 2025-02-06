@@ -8,6 +8,7 @@ data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
 patch_len: 32
 seq_len: 100
 seed: 0
+split: [0.8, 0.1, 0.1]
 
 # Qualitative
 batch_size: 3

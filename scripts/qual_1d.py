@@ -27,6 +27,7 @@ def main(
     patch_len,
     seq_len,
     seed,
+    split,
     batch_size,
     font_size,
     aspect,
@@ -37,7 +38,7 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
-    _, dl = get_dataloaders(data_dir, seq_len, patch_len, batch_size, 0.1, seed)
+    _, _, dl = get_dataloaders(data_dir, seq_len, patch_len, batch_size, split, seed)
     _, _, patch_h, _ = next(iter(dl))[0].shape
 
     preds = []

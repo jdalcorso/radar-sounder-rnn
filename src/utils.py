@@ -41,7 +41,7 @@ def plot_loss(loss_train, loss_val, out_dir):
     plt.close()
 
 
-def get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size, seed):
+def get_dataloaders(data_dir, seq_len, patch_len, batch_size, split, seed):
     """
     Creates a dataset with the given input configuration, then creates dataloaders
     for test and training using a random split.
@@ -55,10 +55,11 @@ def get_dataloaders(data_dir, seq_len, patch_len, batch_size, test_size, seed):
     )
 
     generator = torch.Generator().manual_seed(seed)
-    train_ds, test_ds = random_split(dataset, (1 - test_size, test_size), generator)
+    train_ds, val_ds, test_ds = random_split(dataset, split, generator)
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
+    val_dl = DataLoader(val_ds, batch_size, shuffle=True)
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
-    return train_dl, test_dl
+    return train_dl, val_dl, test_dl
 
 
 def plot_results(seq, label, pred, name):
