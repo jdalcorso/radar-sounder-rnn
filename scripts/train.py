@@ -43,6 +43,8 @@ def main(
     epochs,
     batch_size,
     lr,
+    ce_weights,
+    log_every,
     data_dir,
     out_dir,
     **kwargs,
@@ -59,6 +61,7 @@ def main(
     logger.info(
         "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
     )
+    assert n_classes == len(ce_weights), "Mismatch between n_classes and ce_weights"
 
     # Model
     in_channels = 2 if pos_enc else 1
@@ -82,14 +85,17 @@ def main(
 
         # Train
         model.train(True)
-        seq, label, pred, loss_tr = train(model, optimizer, train_dl, pos_enc)
-        loss_train.append(loss_tr)
-        plot_results(
-            seq[0],
-            label[0],
-            pred[0].argmax(1),
-            out_dir + "/train" + str(epoch + 1) + ".png",
+        seq, label, pred, loss_tr = train(
+            model, optimizer, train_dl, ce_weights, pos_enc
         )
+        loss_train.append(loss_tr)
+        if (epoch + 1) % log_every == 0:
+            plot_results(
+                seq[0],
+                label[0],
+                pred[0].argmax(1),
+                out_dir + "/train" + str(epoch + 1) + ".png",
+            )
 
         # Validation
         loss_val = []
@@ -102,12 +108,13 @@ def main(
                 pred = model(seq)
                 loss_t = cross_entropy(pred.flatten(0, 1), label.flatten(0, 1))
                 loss_val.append(loss_t)
-            plot_results(
-                seq[0],
-                label[0],
-                pred[0].argmax(1),
-                out_dir + "/val" + str(epoch + 1) + ".png",
-            )
+            if (epoch + 1) % log_every == 0:
+                plot_results(
+                    seq[0],
+                    label[0],
+                    pred[0].argmax(1),
+                    out_dir + "/val" + str(epoch + 1) + ".png",
+                )
 
         loss_train, loss_val = (
             torch.tensor(loss_train).mean(),
@@ -128,7 +135,7 @@ def main(
 
 
 @torch.compile
-def train(model, optimizer, dataloader, pos_enc):
+def train(model, optimizer, dataloader, ce_weights, pos_enc):
     loss_train = []
     for batch, item in enumerate(dataloader):
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
@@ -138,6 +145,7 @@ def train(model, optimizer, dataloader, pos_enc):
         loss = cross_entropy(
             pred.flatten(0, 1),
             label.flatten(0, 1),
+            weight=torch.tensor(ce_weights, device="cuda"),
         )
         loss_train.append(loss)
         # Optimize
