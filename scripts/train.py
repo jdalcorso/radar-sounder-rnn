@@ -89,7 +89,7 @@ def main(
             model, optimizer, train_dl, ce_weights, pos_enc
         )
         loss_train.append(loss_tr)
-        if (epoch + 1) % log_every == 0:
+        if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
                 seq[0],
                 label[0],
@@ -108,7 +108,7 @@ def main(
                 pred = model(seq)
                 loss_t = cross_entropy(pred.flatten(0, 1), label.flatten(0, 1))
                 loss_val.append(loss_t)
-            if (epoch + 1) % log_every == 0:
+            if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
                 plot_results(
                     seq[0],
                     label[0],

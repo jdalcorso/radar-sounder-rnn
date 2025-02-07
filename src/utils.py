@@ -56,6 +56,7 @@ def get_dataloaders(data_dir, seq_len, patch_len, batch_size, split, seed):
 
     generator = torch.Generator().manual_seed(seed)
     train_ds, val_ds, test_ds = random_split(dataset, split, generator)
+    train_ds.dataset.data_aug = True
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size, shuffle=True)
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
