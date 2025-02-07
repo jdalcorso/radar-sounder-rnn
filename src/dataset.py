@@ -9,7 +9,15 @@ warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
 
 
 class RadargramDataset(Dataset):
-    def __init__(self, dataset_path, seq_len, patch_width, stride, seq_stride=None):
+    def __init__(
+        self,
+        dataset_path,
+        seq_len,
+        patch_width,
+        stride,
+        seq_stride=None,
+        data_aug=False,
+    ):
         """
         The elements of this dataset are sequences of patches.
         An item of the dataset is a 2-tuple with items with dimension (THW,THW) where:
@@ -26,6 +34,7 @@ class RadargramDataset(Dataset):
         super().__init__()
         self.seq_len = seq_len
         self.seq_stride = seq_stride if seq_stride is not None else seq_len
+        self.data_aug = data_aug
 
         # List files
         all_tiff = glob.glob(os.path.join(dataset_path, "**", "*.tif"), recursive=True)
@@ -39,7 +48,7 @@ class RadargramDataset(Dataset):
 
         rg_path = sorted(rg_path)
         sg_path = sorted(sg_path)
-        
+
         # Get items
         rgs = []
         sgs = []
@@ -71,4 +80,9 @@ class RadargramDataset(Dataset):
         return self.rgs.shape[0]
 
     def __getitem__(self, index):
-        return self.rgs[index], self.sgs[index]
+        rg = self.rgs[index]
+        sg = self.sgs[index]
+        if self.data_aug and torch.rand(1) > 0.5:
+            rg = rg.flip(0, 2)
+            sg = sg.flip(0, 2)
+        return rg, sg
