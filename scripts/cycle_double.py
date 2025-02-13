@@ -33,7 +33,6 @@ set_seed(42)
 
 def main(
     hidden_size,
-    n_classes,
     pos_enc,
     patch_len,
     seq_len,
@@ -42,15 +41,15 @@ def main(
     epochs,
     batch_size,
     lr,
-    data_dir,
+    dataset,
     out_dir,
     **kwargs,
 ):
     logger = logging.getLogger("train")
 
     # Dataset
-    train_dl, val_dl, _ = get_dataloaders(
-        data_dir, seq_len, patch_len, batch_size, split, seed
+    train_dl, val_dl, _, _, n_classes = get_dataloaders(
+        dataset, seq_len, patch_len, batch_size, split, seed
     )
     _, _, patch_h, _ = next(iter(train_dl))[0].shape
     logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))

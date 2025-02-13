@@ -41,11 +41,22 @@ def plot_loss(loss_train, loss_val, out_dir):
     plt.close()
 
 
-def get_dataloaders(data_dir, seq_len, patch_len, batch_size, split, seed):
+def get_dataloaders(dataset, seq_len, patch_len, batch_size, split, seed):
     """
     Creates a dataset with the given input configuration, then creates dataloaders
     for test and training using a random split.
     """
+    match dataset:
+        case "mcords3":
+            data_dir = "/home/jordydalcorso/workspace/datasets/MCORDS3_Miguel/tif"
+            ce_weights = [0.9267, 0.6172, 12.1344, 1.0000, 2.3384]
+            n_classes = 5
+        case "mcords1":
+            data_dir = "/home/jordydalcorso/workspace/datasets/MCORDS1/"
+            ce_weights = [1.0000, 0.1320, 2.4106, 0.1823]
+            n_classes = 4
+        case _:
+            raise ValueError("Choose dataset between mcords1 and mcords3")
     dataset = RadargramDataset(
         dataset_path=data_dir,
         seq_len=seq_len,
@@ -60,7 +71,7 @@ def get_dataloaders(data_dir, seq_len, patch_len, batch_size, split, seed):
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size, shuffle=True)
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
-    return train_dl, val_dl, test_dl
+    return train_dl, val_dl, test_dl, ce_weights, n_classes
 
 
 def plot_results(seq, label, pred, name):
