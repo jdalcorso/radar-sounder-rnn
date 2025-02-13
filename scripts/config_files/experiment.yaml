@@ -1,4 +1,11 @@
+# Bash
+train_script: cycle
+script_dir: /home/jordydalcorso/workspace/recurrent-sounder/scripts
+log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
+container_name: rec_jordydalcorso
+
 # Model
+model: nlur
 hidden_size: 128
 pos_enc: False
 
@@ -7,7 +14,7 @@ dataset: mcords1
 patch_len: 32
 seq_len: 16
 split: [0.8, 0.1, 0.1]
-seed: 0
+seed: 1
 
 # Train
 epochs: 1
@@ -15,6 +22,7 @@ batch_size: 8
 lr: 0.001
 
 # Log
+log_every: 50
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_level: info
