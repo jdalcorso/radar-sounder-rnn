@@ -72,13 +72,13 @@ def main(
 
     if patch_len > 1:
         show_feature_maps(hooked_outputs[: 2 * len(hooks)], out_dir)
-    print("Classification report:\n")
+    logger.info("Classification report:\n")
     report = classification_report(
         labels.flatten(), preds.flatten().cpu(), output_dict=return_dict
     )
-    print(report)
-    print("Confusion matrix:\n")
-    print(confusion_matrix(labels.flatten(), preds.flatten().cpu()))
+    logger.info(report)
+    logger.info("Confusion matrix:\n")
+    logger.info(confusion_matrix(labels.flatten(), preds.flatten().cpu()))
 
 
 def hook_fn(module, input, output):
