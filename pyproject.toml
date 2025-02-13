@@ -8,5 +8,6 @@ description = "Repository for applying recurrent convolutional models to radar s
 authors = [{ name = "Jordy Dal Corso", email = "jordy.dalcorso@unitn.it" }]
 maintainers = [{ name = "Jordy Dal Corso", email = "jordy.dalcorso@unitn.it" }]
 dependencies = [
+    "sh",
     "rasterio==1.3.11"
 ]

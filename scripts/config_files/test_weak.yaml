@@ -1,11 +1,10 @@
 # Model
 model: nlur
 hidden_size: 128
-n_classes: 4
 pos_enc: False
 
 # Dataset
-data_dir: /home/jordydalcorso/workspace/datasets/MCORDS1/
+dataset: mcords1
 patch_len: 32
 seq_len: 16
 split: [0.8, 0.1, 0.1]

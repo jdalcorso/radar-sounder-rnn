@@ -23,7 +23,6 @@ from utils import pos_encode, get_model, get_dataloaders
 
 def main(
     hidden_size,
-    n_classes,
     pos_enc,
     patch_len,
     seq_len,
@@ -32,14 +31,16 @@ def main(
     batch_size,
     font_size,
     aspect,
-    data_dir,
+    dataset,
     out_dir,
     **kwargs,
 ):
     logger = logging.getLogger("train")
 
     # Dataset
-    _, _, dl = get_dataloaders(data_dir, seq_len, patch_len, batch_size, split, seed)
+    _, dl, _, _, n_classes = get_dataloaders(
+        dataset, seq_len, patch_len, batch_size, split, seed
+    )
     _, _, patch_h, _ = next(iter(dl))[0].shape
 
     preds = []
