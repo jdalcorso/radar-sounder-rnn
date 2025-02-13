@@ -80,14 +80,15 @@ def main(
     loss_train_tot = []
     loss_val_tot = []
     for epoch in range(epochs):
-        t0 = time.time()
         loss_train = []
 
         # Train
         model.train(True)
+        t0 = time.time()
         seq, label, pred, loss_tr = train(
             model, optimizer, train_dl, ce_weights, pos_enc
         )
+        t1 = time.time() - t0
         loss_train.append(loss_tr)
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
@@ -125,9 +126,7 @@ def main(
 
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
         logger.info(
-            logger_str.format(
-                epoch + 1, loss_train.item(), loss_val.item(), time.time() - t0
-            )
+            logger_str.format(epoch + 1, loss_train.item(), loss_val.item(), t1)
         )
 
     plot_loss(loss_train_tot, loss_val_tot, out_dir)
