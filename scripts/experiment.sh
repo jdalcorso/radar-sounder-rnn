@@ -4,7 +4,7 @@ log_dir=$2
 container_name=$3
 train_script=$4
 
-# Set test script
+# Set test script. Choose $4 beteen 'train' and 'cycle','cycle_mod','cycle_double'
 if [ "$train_script" == "train" ]; then
     test_script="test"
 else

@@ -10,11 +10,12 @@ split: [0.8, 0.1, 0.1]
 seed: 0
 
 # Train
-epochs: 20
-batch_size: 32
+epochs: 10
+batch_size: 64
 lr: 0.001
 
 # Log
+log_every: 1
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_level: info

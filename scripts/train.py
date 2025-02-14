@@ -50,16 +50,9 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
-    train_dl, val_dl, _, ce_weights, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, seed
+    train_dl, val_dl, _, patch_h, ce_weights, n_classes = get_dataloaders(
+        dataset, seq_len, patch_len, batch_size, split, logger, seed
     )
-    _, _, patch_h, _ = next(iter(train_dl))[0].shape
-    logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
-    logger.info("Number of sequences VAL : {}".format(batch_size * len(val_dl)))
-    logger.info(
-        "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
-    )
-    assert n_classes == len(ce_weights), "Mismatch between n_classes and ce_weights"
 
     # Model
     in_channels = 2 if pos_enc else 1
@@ -121,13 +114,13 @@ def main(
         )
         loss_train_tot.append(loss_train)
         loss_val_tot.append(loss_val)
+        plot_loss(loss_train_tot, loss_val_tot, out_dir)
 
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
         logger.info(
             logger_str.format(epoch + 1, loss_train.item(), loss_val.item(), t1)
         )
 
-    plot_loss(loss_train_tot, loss_val_tot, out_dir)
     torch.save(model.state_dict(), out_dir + "/latest.pt")
 
 

@@ -36,10 +36,9 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
-    _, _, dl, _, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, seed
+    _, _, dl, patch_h, _, n_classes = get_dataloaders(
+        dataset, seq_len, patch_len, batch_size, split, logger, seed
     )
-    _, _, patch_h, _ = next(iter(dl))[0].shape
 
     # Model
     model_name = model
