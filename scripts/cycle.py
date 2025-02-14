@@ -21,6 +21,7 @@ from utils import (
     plot_results,
     pos_encode,
     set_seed,
+    validation_weak,
 )
 
 set_seed(42)
@@ -37,20 +38,15 @@ def main(
     batch_size,
     lr,
     dataset,
+    log_every,
     out_dir,
     **kwargs,
 ):
     logger = logging.getLogger("train")
 
     # Dataset
-    train_dl, val_dl, _, _, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, seed
-    )
-    _, _, patch_h, _ = next(iter(train_dl))[0].shape
-    logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
-    logger.info("Number of sequences TEST : {}".format(batch_size * len(val_dl)))
-    logger.info(
-        "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
+    train_dl, val_dl, _, patch_h, ce_weights, n_classes = get_dataloaders(
+        dataset, seq_len, patch_len, batch_size, split, logger, seed
     )
 
     # Model
@@ -68,64 +64,92 @@ def main(
 
     # Train
     loss_train_tot = []
+    loss_val_tot = []
     for epoch in range(epochs):
-        t0 = time.time()
-        loss_train = []
-
         # Train
         model.train(True)
-        class_weights = torch.tensor([0.16, 0.04, 0.74, 0.06]).to("cuda")
-        for _, item in enumerate(train_dl):
-            seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-            seq = pos_encode(seq) if pos_enc else seq
-            seq = torch.cat([seq, torch.flip(seq, dims=(1, -1))], dim=1)  # B(2T)CHW
-            label = item[1].to("cuda").long()  # BTHW
-            preds = []
-            hidden, cell = None, None
-            optimizer.zero_grad()
-            loss = 0
-            for i in range(seq_len * 2):
-                pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
-                preds.append(pred.unsqueeze(1))  # B1CHW * T
-                # preds has len = seq_len when going in 2nd if
-                # if i == 0:
-                #    loss += cross_entropy(pred, label[:, 0], class_weights)
-                if i >= seq_len and i != seq_len * 2 - 1:
-                    loss += ((seq_len * 2) * 0.1 - i * 0.1 + 0.1) * cross_entropy(
-                        pred,
-                        softmax(
-                            torch.flip(
-                                preds[2 * seq_len - i - 1].squeeze(1), dims=(-1,)
-                            ),
-                            dim=1,
-                        ),
-                        class_weights,
-                    )
-                if i == seq_len * 2 - 1:
-                    loss += cross_entropy(
-                        pred, torch.flip(label[:, 0], dims=(-1,)), class_weights
-                    )
+        t0 = time.time()
+        seq, label, pred, loss_train = train(
+            model, optimizer, train_dl, seq_len, ce_weights, pos_enc
+        )
+        t1 = time.time() - t0
+        if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
+            plot_results(
+                seq[0, :seq_len],
+                label[0],
+                pred[0, :seq_len].argmax(1),  # THW
+                out_dir + "/train" + str(epoch + 1) + ".png",
+            )
 
-            loss_train.append(loss)
-            loss.backward()
-            optimizer.step()
+        # Validation
+        seq, label, this_preds, loss_val = validation_weak(
+            model, val_dl, seq_len, ce_weights, pos_enc
+        )
+        if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
+            plot_results(
+                seq[0],
+                label[0],
+                this_preds[0].argmax(1),
+                out_dir + "/val" + str(epoch + 1) + ".png",
+            )
 
-        preds = torch.cat(preds, 1)  # BTCHW
-        plot_results(
-            seq[0, :seq_len],
-            label[0],
-            preds[0, :seq_len].argmax(1),  # THW
-            out_dir + "/train" + str(epoch + 1) + ".png",
+        loss_train, loss_val = (
+            torch.tensor(loss_train).mean(),
+            torch.tensor(loss_val).mean(),
+        )
+        loss_train_tot.append(loss_train)
+        loss_val_tot.append(loss_val)
+        loss_train_show = [(lt / loss_train_tot[0]).item() for lt in loss_train_tot]
+        loss_val_show = [(lt / loss_val_tot[0]).item() for lt in loss_val_tot]
+        plot_loss(loss_train_show, loss_val_show, out_dir)
+
+        logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
+        logger.info(
+            logger_str.format(epoch + 1, loss_train.item(), loss_val.item(), t1)
         )
 
-        loss_train = torch.tensor(loss_train).mean()
-        loss_train_tot.append(loss_train)
-
-        logger_str = "Epoch: {}, Loss train: {:.3f}, Time: {:.3f}"
-        logger.info(logger_str.format(epoch + 1, loss_train.item(), time.time() - t0))
-
-    plot_loss(loss_train_tot, loss_train_tot, out_dir)
     torch.save(model.state_dict(), out_dir + "/latest.pt")
+
+
+@torch.compile
+def train(model, optimizer, dataloader, seq_len, ce_weights, pos_enc):
+    loss_train = []
+    ce_weights = torch.tensor(ce_weights, device="cuda")
+    for _, item in enumerate(dataloader):
+        seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
+        seq = pos_encode(seq) if pos_enc else seq
+        seq = torch.cat([seq, torch.flip(seq, dims=(1, -1))], dim=1)  # B(2T)CHW
+        label = item[1].to("cuda").long()  # BTHW
+        preds = []
+        hidden, cell = None, None
+        optimizer.zero_grad()
+        loss = 0
+        for i in range(seq_len * 2):
+            pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
+            preds.append(pred.unsqueeze(1))  # B1CHW * T
+            # if i == 0:
+            #     loss += cross_entropy(pred, label[:, 0], ce_weights)
+            if i >= seq_len and i != seq_len * 2 - 1:
+                loss += ((seq_len * 2) * 0.1 - i * 0.1 + 0.1) * cross_entropy(
+                    pred,
+                    softmax(
+                        torch.flip(preds[2 * seq_len - i - 1].squeeze(1), dims=(-1,)),
+                        dim=1,
+                    ),
+                    ce_weights,
+                )
+            if i == seq_len * 2 - 1:
+                loss += cross_entropy(
+                    pred,
+                    torch.flip(label[:, 0], dims=(-1,)),
+                    ce_weights,
+                )
+
+        loss_train.append(loss)
+        loss.backward()
+        optimizer.step()
+    preds = torch.cat(preds, 1)  # BTCHW
+    return seq, label, preds, loss_train
 
 
 if __name__ == "__main__":

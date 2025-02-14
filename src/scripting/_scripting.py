@@ -107,9 +107,7 @@ def logged_main(description: str, main_fn: typing.Callable) -> None:
     # messages to screen).
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.getLevelName(log_level.upper()))
-    frmttr_console = logging.Formatter(
-        "%(asctime)s [%(name)s-%(levelname)s]: %(message)s"
-    )
+    frmttr_console = logging.Formatter("%(message)s")
     console_handler.setFormatter(frmttr_console)
     logging.getLogger().addHandler(console_handler)
 
@@ -118,9 +116,7 @@ def logged_main(description: str, main_fn: typing.Callable) -> None:
     # configuration).
     logfile_handler = logging.FileHandler(filename=log_filename)
     logfile_handler.setLevel(logging.getLevelName(log_level.upper()))
-    frmttr_logfile = logging.Formatter(
-        "%(asctime)s [%(name)s-%(levelname)s]: %(message)s"
-    )
+    frmttr_logfile = logging.Formatter("%(message)s")
     logfile_handler.setFormatter(frmttr_logfile)
     logging.getLogger().addHandler(logfile_handler)
 

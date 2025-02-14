@@ -37,10 +37,9 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
-    _, dl, _, _, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, seed
+    _, dl, _, patch_h, _, n_classes = get_dataloaders(
+        dataset, seq_len, patch_len, batch_size, split, logger, seed
     )
-    _, _, patch_h, _ = next(iter(dl))[0].shape
 
     preds = []
     for i, model in enumerate(["1d64"]):

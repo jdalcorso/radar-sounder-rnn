@@ -2,10 +2,33 @@ import torch
 import numpy
 import random
 import matplotlib.pyplot as plt
+from torch.nn.functional import cross_entropy
 from torch.utils.data import DataLoader, random_split
 from model import UNetWrapper, NLUNetWrapper, URNN, NLURNN, NLURNN1D
 from aspp import UNetASPPWrapper
 from dataset import RadargramDataset
+
+
+@torch.compile
+def validation_weak(model, dataloader, seq_len, ce_weights, pos_enc):
+    loss_val = []
+    ce_weights = torch.tensor(ce_weights, device="cuda")
+    model.train(False)
+    with torch.no_grad():
+        for _, item in enumerate(dataloader):
+            seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BT1HW
+            seq = pos_encode(seq) if pos_enc else seq
+            label = item[1].to("cuda").long()  # BTHW
+            this_preds, hidden, cell = [], None, None
+            for i in range(seq_len):
+                pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
+                this_preds.append(pred.unsqueeze(1))  # B1CHW * T
+            this_preds = torch.cat(this_preds, dim=1)  # BTCHW
+            loss_t = cross_entropy(
+                this_preds.flatten(0, 1), label.flatten(0, 1), ce_weights
+            )
+            loss_val.append(loss_t)
+    return seq, label, this_preds, loss_val
 
 
 def get_model(model, cfg):
@@ -41,7 +64,7 @@ def plot_loss(loss_train, loss_val, out_dir):
     plt.close()
 
 
-def get_dataloaders(dataset, seq_len, patch_len, batch_size, split, seed):
+def get_dataloaders(dataset, seq_len, patch_len, batch_size, split, logger, seed):
     """
     Creates a dataset with the given input configuration, then creates dataloaders
     for test and training using a random split.
@@ -71,7 +94,16 @@ def get_dataloaders(dataset, seq_len, patch_len, batch_size, split, seed):
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size, shuffle=True)
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
-    return train_dl, val_dl, test_dl, ce_weights, n_classes
+
+    _, _, patch_h, _ = next(iter(train_dl))[0].shape
+    logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
+    logger.info("Number of sequences VAL: {}".format(batch_size * len(val_dl)))
+    logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
+    logger.info(
+        "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
+    )
+    assert n_classes == len(ce_weights), "Mismatch between n_classes and ce_weights"
+    return train_dl, val_dl, test_dl, patch_h, ce_weights, n_classes
 
 
 def plot_results(seq, label, pred, name):
