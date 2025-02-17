@@ -71,16 +71,13 @@ def main(
     loss_train_tot = []
     loss_val_tot = []
     for epoch in range(epochs):
-        loss_train = []
-
         # Train
         model.train(True)
         t0 = time.time()
-        seq, label, pred, loss_tr = train(
+        seq, label, pred, loss_train = train(
             model, optimizer, train_dl, ce_weights, pos_enc
         )
         t1 = time.time() - t0
-        loss_train.append(loss_tr)
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
                 seq[0],
@@ -90,23 +87,14 @@ def main(
             )
 
         # Validation
-        loss_val = []
-        model.train(False)
-        with torch.no_grad():
-            for _, item in enumerate(val_dl):
-                seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
-                seq = pos_encode(seq) if pos_enc else seq
-                label = item[1].to("cuda").long()
-                pred = model(seq)
-                loss_t = cross_entropy(pred.flatten(0, 1), label.flatten(0, 1))
-                loss_val.append(loss_t)
-            if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
-                plot_results(
-                    seq[0],
-                    label[0],
-                    pred[0].argmax(1),
-                    out_dir + "/val" + str(epoch + 1) + ".png",
-                )
+        seq, label, pred, loss_val = validation(model, val_dl, ce_weights, pos_enc)
+        if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
+            plot_results(
+                seq[0],
+                label[0],
+                pred[0].argmax(1),
+                out_dir + "/val" + str(epoch + 1) + ".png",
+            )
 
         loss_train, loss_val = (
             torch.tensor(loss_train).mean(),
@@ -127,7 +115,7 @@ def main(
 @torch.compile
 def train(model, optimizer, dataloader, ce_weights, pos_enc):
     loss_train = []
-    for batch, item in enumerate(dataloader):
+    for _, item in enumerate(dataloader):
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
         seq = pos_encode(seq) if pos_enc else seq
         label = item[1].to("cuda").long()  # BTHW
@@ -143,6 +131,25 @@ def train(model, optimizer, dataloader, ce_weights, pos_enc):
         loss.backward()
         optimizer.step()
         return seq, label, pred, loss_train
+
+
+@torch.compile
+def validation(model, dataloader, ce_weights, pos_enc):
+    loss_val = []
+    model.train(False)
+    with torch.no_grad():
+        for _, item in enumerate(dataloader):
+            seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
+            seq = pos_encode(seq) if pos_enc else seq
+            label = item[1].to("cuda").long()
+            pred = model(seq)
+            loss_t = cross_entropy(
+                pred.flatten(0, 1),
+                label.flatten(0, 1),
+                weight=torch.tensor(ce_weights, device="cuda"),
+            )
+            loss_val.append(loss_t)
+    return seq, label, pred, loss_val
 
 
 if __name__ == "__main__":
