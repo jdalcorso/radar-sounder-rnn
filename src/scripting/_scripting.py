@@ -100,7 +100,7 @@ def logged_main(description: str, main_fn: typing.Callable) -> None:
     logging.getLogger().setLevel(logging.NOTSET)
     log_filename = (
         log_folder
-        / f"{main_fn.__name__}_{datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')}.log"
+        / f"{main_fn.__name__}_{datetime.datetime.now().strftime('%Y-%m-%d-%H')}.log"
     )
 
     # Add stdout handler, with level defined by the config file (i.e., print log

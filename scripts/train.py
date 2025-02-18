@@ -70,14 +70,16 @@ def main(
     # Train and validation
     loss_train_tot = []
     loss_val_tot = []
+    start_event = torch.cuda.Event(enable_timing=True)
+    end_event = torch.cuda.Event(enable_timing=True)
     for epoch in range(epochs):
         # Train
         model.train(True)
-        t0 = time.time()
+        start_event.record()
         seq, label, pred, loss_train = train(
             model, optimizer, train_dl, ce_weights, pos_enc
         )
-        t1 = time.time() - t0
+        end_event.record()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
                 seq[0],
@@ -104,9 +106,14 @@ def main(
         loss_val_tot.append(loss_val)
         plot_loss(loss_train_tot, loss_val_tot, out_dir)
 
-        logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
+        logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}ms"
         logger.info(
-            logger_str.format(epoch + 1, loss_train.item(), loss_val.item(), t1)
+            logger_str.format(
+                epoch + 1,
+                loss_train.item(),
+                loss_val.item(),
+                start_event.elapsed_time(end_event),
+            )
         )
 
     torch.save(model.state_dict(), out_dir + "/latest.pt")
