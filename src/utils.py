@@ -96,9 +96,9 @@ def get_dataloaders(dataset, seq_len, patch_len, batch_size, split, logger, seed
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
 
     _, _, patch_h, _ = next(iter(train_dl))[0].shape
-    logger.info("Number of sequences TRAIN: {}".format(batch_size * len(train_dl)))
-    logger.info("Number of sequences VAL: {}".format(batch_size * len(val_dl)))
-    logger.info("Number of sequences TEST : {}".format(batch_size * len(test_dl)))
+    logger.info("Number of sequences TRAIN: {}".format(len(train_ds)))
+    logger.info("Number of sequences VAL: {}".format(len(val_ds)))
+    logger.info("Number of sequences TEST : {}".format(len(test_ds)))
     logger.info(
         "Shape of dataloader items: {}\n".format(list(next(iter(train_dl))[0].shape))
     )
