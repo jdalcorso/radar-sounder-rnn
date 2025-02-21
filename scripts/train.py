@@ -19,7 +19,7 @@ import torch
 from torch.cuda import device_count
 from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy
-from torch.optim import AdamW
+from torch.optim import AdamW, lr_scheduler
 
 from utils import (
     plot_loss,
@@ -66,6 +66,7 @@ def main(
 
     # # Optimizer
     optimizer = AdamW(model.parameters(), lr)
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=9 * epochs // 10, gamma=0.1)
 
     # Train and validation
     loss_train_tot = []
@@ -105,7 +106,7 @@ def main(
         loss_train_tot.append(loss_train)
         loss_val_tot.append(loss_val)
         plot_loss(loss_train_tot, loss_val_tot, out_dir)
-
+        scheduler.step()
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}ms"
         logger.info(
             logger_str.format(
