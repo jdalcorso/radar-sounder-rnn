@@ -35,7 +35,7 @@ class ConvLSTM(nn.Module):
             x_i = x[:, i, ...]  # x_i is BcHW
             cat_x = torch.cat([x_i, h], dim=1)  # B(c+C)HW
             conv_x = self.conv(cat_x)  # B(4C)HW
-            i, tmp_c, o = torch.chunk(conv_x, 3, dim=1)  # BCHW * 4
+            i, tmp_c, o = torch.chunk(conv_x, 3, dim=1)  # BCHW * 3
             i = torch.sigmoid(i + self.Wci * c)
             c = c + i * torch.tanh(tmp_c)
             o = torch.sigmoid(o + self.Wco * c)
@@ -83,7 +83,7 @@ class ConvLSTMCell(nn.Module):
         self.out_channels = out_channels
         self.conv = nn.Conv2d(
             in_channels + out_channels,
-            out_channels * 4,
+            out_channels * 3,
             kernel_size=3,
             padding="same",
             padding_mode="reflect",
@@ -101,11 +101,10 @@ class ConvLSTMCell(nn.Module):
             c = torch.zeros((B, self.out_channels, H, W), dtype=torch.float).to("cuda")
 
         cat_x = torch.cat([x, h], dim=1)  # B(c+C)HW
-        conv_x = self.conv(cat_x)  # B(4C)HW
-        i, f, tmp_c, o = torch.chunk(conv_x, 4, dim=1)  # BCHW * 4
+        conv_x = self.conv(cat_x)  # B(3C)HW
+        i, tmp_c, o = torch.chunk(conv_x, 3, dim=1)  # BCHW * 3
         i = torch.sigmoid(i + self.Wci * c)
-        f = torch.sigmoid(f + self.Wcf * c)
-        c = f * c + i * torch.tanh(tmp_c)
+        c = c + i * torch.tanh(tmp_c)
         o = torch.sigmoid(o + self.Wco * c)
         h = o * torch.tanh(c)
         return h, c  # BCHW * 2
