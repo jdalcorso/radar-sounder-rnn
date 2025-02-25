@@ -22,6 +22,7 @@ from utils import (
     pos_encode,
     set_seed,
     validation_weak,
+    save_latest,
 )
 
 set_seed(42)
@@ -109,6 +110,9 @@ def main(
         loss_val_show = [(lt / loss_val_tot[0]).item() for lt in loss_val_tot]
         plot_loss(loss_train_show, loss_val_show, out_dir)
 
+        # Save
+        if epochs - epoch <= 50:
+            save_latest(model, out_dir, loss_val_tot)
         logger_str = "Epoch: {}, Loss sup: {:.3f}, Loss cyc: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
         logger.info(
             logger_str.format(

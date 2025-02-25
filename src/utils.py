@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy
 import random
@@ -9,7 +10,7 @@ from aspp import UNetASPPWrapper
 from dataset import RadargramDataset
 
 
-@torch.compile
+# @torch.compile
 def validation_weak(model, dataloader, seq_len, ce_weights, pos_enc):
     loss_val = []
     ce_weights = torch.tensor(ce_weights, device="cuda")
@@ -213,3 +214,26 @@ def show_feature_maps(maps, out_dir):
         axes[i].axis("off")
     plt.savefig(out_dir + "/maps.png")
     plt.close()
+
+
+def save_latest(model, out_dir, loss_val_tot):
+    """
+    Saves the model checkpoint in the out_dir folder and names it latest_xxx.pt
+    where xxx is the last validation loss (only decimals).
+    """
+    loss_val = round(loss_val_tot[-1].item(), 3)
+    loss_val = str(loss_val).split(".")[0] + str(loss_val).split(".")[1]
+    torch.save(model.state_dict(), out_dir + "/epoch_" + loss_val + ".pt")
+
+
+def load_best(model, out_dir):
+    """
+    Loads the model checkpoint with the lowest validation loss in the out_dir folder.
+    """
+    files = os.listdir(out_dir)
+    files = [f for f in files if f.startswith("epoch")]
+    losses = [int(f.split("_")[-1].split(".")[0]) for f in files]
+    best = files[losses.index(min(losses))]
+    print(best)
+    model.load_state_dict(torch.load(out_dir + "/" + best))
+    return model
