@@ -120,7 +120,7 @@ def main(
     torch.save(model.state_dict(), out_dir + "/latest.pt")
 
 
-@torch.compile
+# @torch.compile
 def train(model, optimizer, dataloader, seq_len, ce_weights, pos_enc):
     loss_train = []
     ce_weights = torch.tensor(ce_weights, device="cuda")
@@ -140,22 +140,10 @@ def train(model, optimizer, dataloader, seq_len, ce_weights, pos_enc):
             for i in range(sub_len * 2):  # iterate on the sub-sequence
                 pred, hidden, cell = model(sub[:, i], hidden, cell)  # BCHW
                 preds.append(pred.unsqueeze(1))  # B1CHW * T
-                # First with reference
+                # First with reference (supervised loss)
                 if i == 0:
                     loss += cross_entropy(pred, label[:, 0], ce_weights)
-                # Intermediate
-                if i >= sub_len and i != sub_len * 2 - 1:
-                    loss += cross_entropy(
-                        pred,
-                        softmax(
-                            torch.flip(
-                                preds[2 * sub_len - i - 1].squeeze(1), dims=(-1,)
-                            ),
-                            dim=1,
-                        ),
-                        ce_weights,
-                    )
-                # Last with first
+                # Second with flipped reference (cycle-consistency loss)
                 if i == sub_len * 2 - 1:
                     loss += cross_entropy(
                         pred, torch.flip(label[:, 0], dims=(-1,)), ce_weights

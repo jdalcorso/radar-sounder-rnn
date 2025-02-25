@@ -53,10 +53,9 @@ def main(
     model = model.to("cuda")
     try:
         model = load_best(model, out_dir)
-        logger.info("Loaded best of 10 model")
     except:
         model.load_state_dict(torch.load(out_dir + "/best.pt"))
-        logger.info("Loaded best model")
+        logger.info("Loaded best.pt")
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Hooks

@@ -27,6 +27,7 @@ from utils import (
     pos_encode,
     set_seed,
     validation_weak,
+    save_latest,
 )
 
 set_seed(42)
@@ -108,6 +109,9 @@ def main(
         loss_val_show = [(lt / loss_val_tot[0]).item() for lt in loss_val_tot]
         plot_loss(loss_train_show, loss_val_show, out_dir)
 
+        # Save
+        if epochs - epoch <= 50:
+            save_latest(model, out_dir, loss_val_tot)
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
         logger.info(
             logger_str.format(epoch + 1, loss_train.item(), loss_val.item(), t1)
@@ -139,21 +143,9 @@ def train(model, optimizer, dataloader, seq_len, ce_weights, pos_enc):
                 # First with reference
                 if i == 0:
                     loss += cross_entropy(pred, label[:, 0], ce_weights)
-                # Intermediate
-                if i >= sub_len and i != sub_len * 2 - 1:
-                    loss += cross_entropy(
-                        pred,
-                        softmax(
-                            torch.flip(
-                                preds[2 * sub_len - i - 1].squeeze(1), dims=(-1,)
-                            ),
-                            dim=1,
-                        ),
-                        ce_weights,
-                    )
                 # Vanilla CC as in cycle.py
                 if i >= sub_len and i != sub_len * 2 - 1:
-                    loss += ((sub_len * 2) * 0.1 - i * 0.1 + 0.1) * cross_entropy(
+                    loss += (1 / seq_len) * cross_entropy(
                         pred,
                         softmax(
                             torch.flip(
