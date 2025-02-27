@@ -38,8 +38,9 @@ def main(
     logger = logging.getLogger("train")
 
     # Dataset
+    first_only = False
     _, _, dl, patch_h, _, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, logger, seed
+        dataset, seq_len, patch_len, batch_size, split, first_only, logger, seed
     )
 
     # Model
@@ -53,7 +54,7 @@ def main(
     model = model.to("cuda")
     try:
         model, best_loss = load_best(model, out_dir)
-        logger.info("Loaded epoch_{}.pt".format(best_loss))
+        logger.info("Loaded {}".format(best_loss))
     except:
         model.load_state_dict(torch.load(out_dir + "/best.pt"))
         logger.info("Loaded best.pt")

@@ -38,6 +38,7 @@ def main(
     patch_len,
     seq_len,
     split,
+    first_only,
     seed,
     epochs,
     batch_size,
@@ -51,7 +52,7 @@ def main(
 
     # Dataset
     train_dl, val_dl, _, patch_h, ce_weights, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, logger, seed
+        dataset, seq_len, patch_len, batch_size, split, first_only, logger, seed
     )
 
     # Model

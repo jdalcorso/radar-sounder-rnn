@@ -17,6 +17,7 @@ class RadargramDataset(Dataset):
         stride,
         seq_stride=None,
         data_aug=False,
+        first_only=False,
     ):
         """
         The elements of this dataset are sequences of patches.
@@ -35,6 +36,7 @@ class RadargramDataset(Dataset):
         self.seq_len = seq_len
         self.seq_stride = seq_stride if seq_stride is not None else seq_len
         self.data_aug = data_aug
+        self.first_only = first_only
 
         # List files
         all_tiff = glob.glob(os.path.join(dataset_path, "**", "*.tif"), recursive=True)
@@ -85,4 +87,7 @@ class RadargramDataset(Dataset):
         if self.data_aug and torch.rand(1) > 0.5:
             rg = rg.flip(0, 2)
             sg = sg.flip(0, 2)
+        if self.first_only:
+            rg = rg[0].unsqueeze(0)
+            sg = sg[0].unsqueeze(0)
         return rg, sg

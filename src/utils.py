@@ -65,7 +65,9 @@ def plot_loss(loss_train, loss_val, out_dir):
     plt.close()
 
 
-def get_dataloaders(dataset, seq_len, patch_len, batch_size, split, logger, seed):
+def get_dataloaders(
+    dataset, seq_len, patch_len, batch_size, split, first_only, logger, seed
+):
     """
     Creates a dataset with the given input configuration, then creates dataloaders
     for test and training using a random split.
@@ -92,6 +94,7 @@ def get_dataloaders(dataset, seq_len, patch_len, batch_size, split, logger, seed
     generator = torch.Generator().manual_seed(seed)
     train_ds, val_ds, test_ds = random_split(dataset, split, generator)
     train_ds.dataset.data_aug = True
+    train_ds.dataset.first_only = first_only
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size, shuffle=True)
     test_dl = DataLoader(test_ds, batch_size, shuffle=False)
@@ -112,39 +115,42 @@ def plot_results(seq, label, pred, name):
     Utility for plotting qualitative results.
     """
     # seq, label, pred has to be THW (seq TCHW -> THW)
-    seq = seq[:, 0] if len(seq.shape) > 3 else seq
-    T = seq.shape[0]
-    if seq.shape[-1] != 1:
-        fig, axes = plt.subplots(3, T, figsize=(20, 20))
-        for i in range(T):
-            axes[0, i].imshow(seq[i].cpu().numpy(), cmap="gray", aspect="auto")
-            axes[0, i].axis("off")
-            axes[1, i].imshow(
-                label[i].cpu().numpy(), aspect="auto", interpolation="nearest"
-            )
-            axes[1, i].axis("off")
-            axes[2, i].imshow(
-                pred[i].cpu().numpy(), aspect="auto", interpolation="nearest"
-            )
-            axes[2, i].axis("off")
-    else:
-        fig, axes = plt.subplots(3, 1, figsize=(20, 20))
-        S = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
-        L = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
-        P = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
-        for i in range(T):
-            S[:, i] = seq[i].squeeze()
-            L[:, i] = label[i].squeeze()
-            P[:, i] = pred[i].squeeze()
-        axes[0].imshow(S.cpu().numpy(), cmap="gray", aspect="auto")
-        axes[0].axis("off")
-        axes[1].imshow(L.cpu().numpy(), aspect="auto", interpolation="nearest")
-        axes[1].axis("off")
-        axes[2].imshow(P.cpu().numpy(), aspect="auto", interpolation="nearest")
-        axes[2].axis("off")
-    plt.tight_layout()
-    plt.savefig(name)
-    plt.close()
+    try:
+        seq = seq[:, 0] if len(seq.shape) > 3 else seq
+        T = seq.shape[0]
+        if seq.shape[-1] != 1:
+            fig, axes = plt.subplots(3, T, figsize=(20, 20))
+            for i in range(T):
+                axes[0, i].imshow(seq[i].cpu().numpy(), cmap="gray", aspect="auto")
+                axes[0, i].axis("off")
+                axes[1, i].imshow(
+                    label[i].cpu().numpy(), aspect="auto", interpolation="nearest"
+                )
+                axes[1, i].axis("off")
+                axes[2, i].imshow(
+                    pred[i].cpu().numpy(), aspect="auto", interpolation="nearest"
+                )
+                axes[2, i].axis("off")
+        else:
+            fig, axes = plt.subplots(3, 1, figsize=(20, 20))
+            S = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+            L = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+            P = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+            for i in range(T):
+                S[:, i] = seq[i].squeeze()
+                L[:, i] = label[i].squeeze()
+                P[:, i] = pred[i].squeeze()
+            axes[0].imshow(S.cpu().numpy(), cmap="gray", aspect="auto")
+            axes[0].axis("off")
+            axes[1].imshow(L.cpu().numpy(), aspect="auto", interpolation="nearest")
+            axes[1].axis("off")
+            axes[2].imshow(P.cpu().numpy(), aspect="auto", interpolation="nearest")
+            axes[2].axis("off")
+        plt.tight_layout()
+        plt.savefig(name)
+        plt.close()
+    except:
+        plt.close()
 
 
 def pos_encode(seq):
@@ -228,7 +234,7 @@ def save_latest(model, out_dir, loss_val_tot):
     torch.save(model.state_dict(), out_dir + "/epoch_" + loss_val + ".pt")
 
 
-def load_best(model, out_dir, logger):
+def load_best(model, out_dir):
     """
     Loads the model checkpoint with the lowest validation loss in the out_dir folder.
     """
@@ -236,6 +242,5 @@ def load_best(model, out_dir, logger):
     files = [f for f in files if f.startswith("epoch")]
     losses = [int(f.split("_")[-1].split(".")[0]) for f in files]
     best = files[losses.index(min(losses))]
-    logger.info("Training with best model: ", best)
     model.load_state_dict(torch.load(out_dir + "/" + best))
-    return model
+    return model, best
