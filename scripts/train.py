@@ -27,7 +27,7 @@ from utils import (
     plot_results,
     pos_encode,
     get_model,
-    set_seed,
+    save_latest,
 )
 
 
@@ -107,6 +107,9 @@ def main(
         loss_val_tot.append(loss_val)
         plot_loss(loss_train_tot, loss_val_tot, out_dir)
         scheduler.step()
+
+        # Save
+        save_latest(model, out_dir, loss_val_tot)
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}ms"
         logger.info(
             logger_str.format(

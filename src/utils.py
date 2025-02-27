@@ -223,10 +223,12 @@ def save_latest(model, out_dir, loss_val_tot):
     """
     loss_val = round(loss_val_tot[-1].item(), 3)
     loss_val = str(loss_val).split(".")[0] + str(loss_val).split(".")[1]
+    while len(loss_val) <= 4:
+        loss_val = loss_val + "0"
     torch.save(model.state_dict(), out_dir + "/epoch_" + loss_val + ".pt")
 
 
-def load_best(model, out_dir):
+def load_best(model, out_dir, logger):
     """
     Loads the model checkpoint with the lowest validation loss in the out_dir folder.
     """
@@ -234,6 +236,6 @@ def load_best(model, out_dir):
     files = [f for f in files if f.startswith("epoch")]
     losses = [int(f.split("_")[-1].split(".")[0]) for f in files]
     best = files[losses.index(min(losses))]
-    print(best)
+    logger.info("Training with best model: ", best)
     model.load_state_dict(torch.load(out_dir + "/" + best))
     return model
