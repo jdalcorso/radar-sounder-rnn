@@ -58,7 +58,8 @@ def main(
         model = DataParallel(model)
     model = model.to("cuda")
     try:
-        model = load_best(model, out_dir, logger)
+        model, best_loss = load_best(model, out_dir)
+        logger.info("Loaded epoch_{}.pt".format(best_loss))
     except:
         model.load_state_dict(torch.load(out_dir + "/best.pt"))
         logger.info("Loaded best.pt")
