@@ -5,6 +5,8 @@ Testing on MCORDS1 Dataset with ~100k rangelines, 410 samples
 
 @author: Jordy Dal Corso
 """
+import os
+import glob
 import logging
 import scripting
 import torch
@@ -13,7 +15,14 @@ from torch.cuda import device_count
 from torch.nn import DataParallel
 from sklearn.metrics import classification_report, confusion_matrix
 
-from utils import pos_encode, get_model, get_hooks, show_feature_maps, get_dataloaders
+from utils import (
+    pos_encode,
+    get_model,
+    get_hooks,
+    show_feature_maps,
+    get_dataloaders,
+    load_best,
+)
 
 hooked_outputs = []
 
@@ -48,7 +57,11 @@ def main(
     if num_devices >= 2:
         model = DataParallel(model)
     model = model.to("cuda")
-    model.load_state_dict(torch.load(out_dir + "/latest.pt"))
+    try:
+        model = load_best(model, out_dir, logger)
+    except:
+        model.load_state_dict(torch.load(out_dir + "/best.pt"))
+        logger.info("Loaded best.pt")
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Hooks
@@ -78,6 +91,11 @@ def main(
     logger.info(report)
     logger.info("Confusion matrix:\n")
     logger.info(confusion_matrix(labels.flatten(), preds.flatten().cpu()))
+
+    # Delete all files in the output folder that start with "epoch"
+    torch.save(model.state_dict(), os.path.join(out_dir, "best.pt"))
+    for file in glob.glob(os.path.join(out_dir, "epoch*")):
+        os.remove(file)
 
 
 def hook_fn(module, input, output):
