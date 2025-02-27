@@ -29,6 +29,7 @@ def main(
     patch_len,
     seq_len,
     split,
+    first_only,
     seed,
     epochs,
     batch_size,
@@ -54,6 +55,7 @@ def main(
         modify_yaml(script_dir, script, "patch_len", patch_len)
         modify_yaml(script_dir, script, "seq_len", seq_len)
         modify_yaml(script_dir, script, "split", split)
+        modify_yaml(script_dir, script, "first_only", first_only)
         modify_yaml(script_dir, script, "epochs", epochs)
         modify_yaml(script_dir, script, "batch_size", batch_size)
         modify_yaml(script_dir, script, "lr", lr)

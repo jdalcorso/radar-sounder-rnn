@@ -8,10 +8,11 @@ dataset: mcords1
 patch_len: 32
 seq_len: 16
 split: [0.8, 0.1, 0.1]
-seed: 0
+first_only: True
+seed: 9
 
 # Test
-batch_size: 8
+batch_size: 32
 
 # Log
 return_dict: True
