@@ -44,6 +44,7 @@ def main(
     batch_size,
     lr,
     log_every,
+    log_last,
     dataset,
     out_dir,
     **kwargs,
@@ -110,7 +111,8 @@ def main(
         scheduler.step()
 
         # Save
-        save_latest(model, out_dir, loss_val_tot)
+        if epochs - epoch <= log_last or epoch == epochs - 1:
+            save_latest(model, out_dir, loss_val_tot)
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}ms"
         logger.info(
             logger_str.format(

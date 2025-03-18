@@ -45,6 +45,7 @@ def main(
     lr,
     dataset,
     log_every,
+    log_last,
     out_dir,
     **kwargs,
 ):
@@ -111,7 +112,7 @@ def main(
         plot_loss(loss_train_show, loss_val_show, out_dir)
 
         # Save
-        if epochs - epoch <= 50:
+        if epochs - epoch <= log_last or epoch == epochs - 1:
             save_latest(model, out_dir, loss_val_tot)
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
         logger.info(

@@ -97,7 +97,7 @@ def get_dataloaders(
     train_ds.dataset.first_only = first_only
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size, shuffle=True)
-    test_dl = DataLoader(test_ds, batch_size, shuffle=False)
+    test_dl = DataLoader(test_ds, 1, shuffle=False)
 
     _, _, patch_h, _ = next(iter(train_dl))[0].shape
     logger.info("Number of sequences TRAIN: {}".format(len(train_ds)))
@@ -115,42 +115,39 @@ def plot_results(seq, label, pred, name):
     Utility for plotting qualitative results.
     """
     # seq, label, pred has to be THW (seq TCHW -> THW)
-    try:
-        seq = seq[:, 0] if len(seq.shape) > 3 else seq
-        T = seq.shape[0]
-        if seq.shape[-1] != 1:
-            fig, axes = plt.subplots(3, T, figsize=(20, 20))
-            for i in range(T):
-                axes[0, i].imshow(seq[i].cpu().numpy(), cmap="gray", aspect="auto")
-                axes[0, i].axis("off")
-                axes[1, i].imshow(
-                    label[i].cpu().numpy(), aspect="auto", interpolation="nearest"
-                )
-                axes[1, i].axis("off")
-                axes[2, i].imshow(
-                    pred[i].cpu().numpy(), aspect="auto", interpolation="nearest"
-                )
-                axes[2, i].axis("off")
-        else:
-            fig, axes = plt.subplots(3, 1, figsize=(20, 20))
-            S = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
-            L = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
-            P = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
-            for i in range(T):
-                S[:, i] = seq[i].squeeze()
-                L[:, i] = label[i].squeeze()
-                P[:, i] = pred[i].squeeze()
-            axes[0].imshow(S.cpu().numpy(), cmap="gray", aspect="auto")
-            axes[0].axis("off")
-            axes[1].imshow(L.cpu().numpy(), aspect="auto", interpolation="nearest")
-            axes[1].axis("off")
-            axes[2].imshow(P.cpu().numpy(), aspect="auto", interpolation="nearest")
-            axes[2].axis("off")
-        plt.tight_layout()
-        plt.savefig(name)
-        plt.close()
-    except:
-        plt.close()
+    seq = seq[:, 0] if len(seq.shape) > 3 else seq
+    T = seq.shape[0]
+    if seq.shape[-1] != 1:
+        _, axes = plt.subplots(3, T, figsize=(20, 20))
+        for i in range(T):
+            axes[0, i].imshow(seq[i].cpu().numpy(), cmap="gray", aspect="auto")
+            axes[0, i].axis("off")
+            axes[1, i].imshow(
+                label[i].cpu().numpy(), aspect="auto", interpolation="nearest"
+            )
+            axes[1, i].axis("off")
+            axes[2, i].imshow(
+                pred[i].cpu().numpy(), aspect="auto", interpolation="nearest"
+            )
+            axes[2, i].axis("off")
+    else:
+        _, axes = plt.subplots(3, 1, figsize=(20, 20))
+        S = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+        L = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+        P = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
+        for i in range(T):
+            S[:, i] = seq[i].squeeze()
+            L[:, i] = label[i].squeeze()
+            P[:, i] = pred[i].squeeze()
+        axes[0].imshow(S.cpu().numpy(), cmap="gray", aspect="auto")
+        axes[0].axis("off")
+        axes[1].imshow(L.cpu().numpy(), aspect="auto", interpolation="nearest")
+        axes[1].axis("off")
+        axes[2].imshow(P.cpu().numpy(), aspect="auto", interpolation="nearest")
+        axes[2].axis("off")
+    plt.tight_layout()
+    plt.savefig(name)
+    plt.close()
 
 
 def pos_encode(seq):
