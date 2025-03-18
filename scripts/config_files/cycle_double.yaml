@@ -16,6 +16,7 @@ lr: 0.001
 
 # Log
 log_every: 10
+log_last: 10
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_level: info
