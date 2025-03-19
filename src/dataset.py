@@ -4,6 +4,7 @@ import warnings
 import torch
 import rasterio as rio
 from torch.utils.data import Dataset
+from torchvision.transforms import ElasticTransform, RandomHorizontalFlip, Compose
 
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
 
@@ -37,6 +38,12 @@ class RadargramDataset(Dataset):
         self.seq_stride = seq_stride if seq_stride is not None else seq_len
         self.data_aug = data_aug
         self.first_only = first_only
+        self.transform = Compose(
+            [
+                ElasticTransform(alpha=1000.0, sigma=1.0),
+                RandomHorizontalFlip(p=0.5),
+            ]
+        )
 
         # List files
         all_tiff = glob.glob(os.path.join(dataset_path, "**", "*.tif"), recursive=True)
@@ -82,11 +89,16 @@ class RadargramDataset(Dataset):
         return self.rgs.shape[0]
 
     def __getitem__(self, index):
-        rg = self.rgs[index]
+        rg = self.rgs[index]  # THW
         sg = self.sgs[index]
-        if self.data_aug and torch.rand(1) > 0.5:
-            rg = rg.flip(0, 2)
-            sg = sg.flip(0, 2)
+        if self.data_aug:
+            rg = torch.cat(list(rg), dim=1)  # THW -> H x TW
+            sg = torch.cat(list(sg), dim=1)
+            rg = self.transform(rg.unsqueeze(0)).squeeze(0)
+            sg = self.transform(sg.unsqueeze(0)).squeeze(0)
+            rg = rg.unfold(1, self.seq_len, self.seq_len).permute(2, 0, 1)  # THW
+            sg = sg.unfold(1, self.seq_len, self.seq_len).permute(2, 0, 1)
+
         if self.first_only:
             rg = rg[0].unsqueeze(0)
             sg = sg[0].unsqueeze(0)
