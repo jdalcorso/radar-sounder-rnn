@@ -11,7 +11,6 @@ on 1 channel radar sounder data.
 
 @author: Jordy Dal Corso
 """
-import time
 import logging
 import scripting
 import torch
@@ -19,7 +18,7 @@ import torch
 from torch.cuda import device_count
 from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy
-from torch.optim import AdamW, lr_scheduler
+from torch.optim import AdamW
 
 from utils import (
     plot_loss,
@@ -68,7 +67,6 @@ def main(
 
     # # Optimizer
     optimizer = AdamW(model.parameters(), lr)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=9 * epochs // 10, gamma=0.1)
 
     # Train and validation
     loss_train_tot = []
@@ -108,7 +106,6 @@ def main(
         loss_train_tot.append(loss_train)
         loss_val_tot.append(loss_val)
         plot_loss(loss_train_tot, loss_val_tot, out_dir)
-        scheduler.step()
 
         # Save
         if epochs - epoch <= log_last or epoch == epochs - 1:
