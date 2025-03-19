@@ -38,7 +38,7 @@ def main(
 
     # Dataset
     _, dl, _, patch_h, _, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, logger, seed
+        dataset, seq_len, patch_len, batch_size, split, False, False, logger, seed
     )
 
     preds = []
