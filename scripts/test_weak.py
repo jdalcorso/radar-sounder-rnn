@@ -40,7 +40,7 @@ def main(
     # Dataset
     first_only = False
     _, _, dl, patch_h, _, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, first_only, logger, seed
+        dataset, seq_len, patch_len, batch_size, split, first_only, False, logger, seed
     )
 
     # Model

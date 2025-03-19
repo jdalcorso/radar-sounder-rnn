@@ -66,7 +66,7 @@ def plot_loss(loss_train, loss_val, out_dir):
 
 
 def get_dataloaders(
-    dataset, seq_len, patch_len, batch_size, split, first_only, logger, seed
+    dataset, seq_len, patch_len, batch_size, split, first_only, data_aug, logger, seed
 ):
     """
     Creates a dataset with the given input configuration, then creates dataloaders
@@ -93,7 +93,7 @@ def get_dataloaders(
 
     generator = torch.Generator().manual_seed(seed)
     train_ds, val_ds, test_ds = random_split(dataset, split, generator)
-    train_ds.dataset.data_aug = True
+    train_ds.dataset.data_aug = data_aug
     train_ds.dataset.first_only = first_only
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size, shuffle=True)

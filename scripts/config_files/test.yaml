@@ -1,6 +1,6 @@
 # Model
 model: u
-hidden_size: 512
+hidden_size: 128
 pos_enc: False
 
 # Dataset

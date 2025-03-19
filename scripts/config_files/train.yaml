@@ -1,23 +1,24 @@
 # Model
 model: u
-hidden_size: 1024
+hidden_size: 128
 pos_enc: False
 
 # Dataset
 dataset: mcords3
-patch_len: 64
-seq_len: 2
+patch_len: 32
+seq_len: 16
 split: [0.6, 0.2, 0.2]
 first_only: False
-seed: 9
+data_aug: True
+seed: 0
 
 # Train
-epochs: 500
+epochs: 2
 batch_size: 2
 lr: 0.0001
 
 # Log
-log_every: 50
+log_every: 1
 log_last: 10
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log

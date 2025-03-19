@@ -49,7 +49,7 @@ def main(
     # Dataset
     first_only = False
     train_dl, val_dl, _, patch_h, ce_weights, n_classes = get_dataloaders(
-        dataset, seq_len, patch_len, batch_size, split, first_only, logger, seed
+        dataset, seq_len, patch_len, batch_size, split, first_only, False, logger, seed
     )
 
     # Model

@@ -5,6 +5,7 @@ import torch
 import rasterio as rio
 from torch.utils.data import Dataset
 from torchvision.transforms import ElasticTransform, RandomHorizontalFlip, Compose
+from torchvision.transforms.functional import InterpolationMode
 
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
 
@@ -34,13 +35,19 @@ class RadargramDataset(Dataset):
         parameter regulates the overlapping between sequences (in term of number of patches).
         """
         super().__init__()
+        torch.manual_seed(0)
         self.seq_len = seq_len
+        self.patch_width = patch_width
         self.seq_stride = seq_stride if seq_stride is not None else seq_len
         self.data_aug = data_aug
         self.first_only = first_only
         self.transform = Compose(
             [
-                ElasticTransform(alpha=1000.0, sigma=1.0),
+                ElasticTransform(
+                    alpha=float(patch_width) * 20,
+                    sigma=float(patch_width) / 2,
+                    interpolation=InterpolationMode.NEAREST,
+                ),
                 RandomHorizontalFlip(p=0.5),
             ]
         )
@@ -94,10 +101,11 @@ class RadargramDataset(Dataset):
         if self.data_aug:
             rg = torch.cat(list(rg), dim=1)  # THW -> H x TW
             sg = torch.cat(list(sg), dim=1)
-            rg = self.transform(rg.unsqueeze(0)).squeeze(0)
-            sg = self.transform(sg.unsqueeze(0)).squeeze(0)
-            rg = rg.unfold(1, self.seq_len, self.seq_len).permute(2, 0, 1)  # THW
-            sg = sg.unfold(1, self.seq_len, self.seq_len).permute(2, 0, 1)
+            composite = self.transform(torch.stack([rg, sg], dim=0))
+            rg = composite[0]
+            sg = composite[1]
+            rg = rg.unfold(1, self.patch_width, self.patch_width).permute(1, 0, 2)
+            sg = sg.unfold(1, self.patch_width, self.patch_width).permute(1, 0, 2)
 
         if self.first_only:
             rg = rg[0].unsqueeze(0)
