@@ -53,7 +53,7 @@ class RadargramDataset(Dataset):
         )
 
         # List files
-        all_tiff = glob.glob(os.path.join(dataset_path, "**", "*.tif"), recursive=True)
+        all_tiff = sorted(glob.glob(os.path.join(dataset_path, "*.tif")))
         rg_path = []
         sg_path = []
         for file in all_tiff:
