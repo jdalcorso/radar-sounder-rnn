@@ -1,15 +1,15 @@
 # Model
-model: u
+model: nlur
 hidden_size: 128
 pos_enc: False
 
 # Dataset
 dataset: mcords3
-patch_len: 64
-seq_len: 2
-split: [0.6, 0.2, 0.2]
+patch_len: 32
+seq_len: 128
+split: [0.75, 0.25]
 first_only: False
-seed: 9
+seed: 0
 
 # Test
 batch_size: 1

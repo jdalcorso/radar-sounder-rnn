@@ -78,7 +78,7 @@ def get_dataloaders(
             ce_weights = [0.9267, 0.6172, 12.1344, 1.0000, 2.3384]
             n_classes = 5
         case "mcords1":
-            data_dir = "/home/jordydalcorso/workspace/datasets/MCORDS1/"
+            data_dir = "/home/jordydalcorso/workspace/datasets/MCORDS1"
             ce_weights = [1.0000, 0.1320, 2.4106, 0.1823]
             n_classes = 4
         case _:
@@ -91,8 +91,16 @@ def get_dataloaders(
         seq_stride=seq_len,
     )
 
+    test_ds = RadargramDataset(
+        dataset_path=data_dir + "/test",
+        seq_len=seq_len,
+        patch_width=patch_len,
+        stride=patch_len,
+        seq_stride=seq_len,
+    )
+
     generator = torch.Generator().manual_seed(seed)
-    train_ds, val_ds, test_ds = random_split(dataset, split, generator)
+    train_ds, val_ds = random_split(dataset, split, generator)
     train_ds.dataset.data_aug = data_aug
     train_ds.dataset.first_only = first_only
     train_dl = DataLoader(train_ds, batch_size, shuffle=True)

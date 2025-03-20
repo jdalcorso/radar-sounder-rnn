@@ -16,6 +16,7 @@ import scripting
 import torch
 
 from torch.cuda import device_count
+from torch.cuda.amp import autocast, GradScaler
 from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy
 from torch.optim import AdamW
@@ -74,8 +75,9 @@ def main(
     model = model.to("cuda")
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
-    # # Optimizer
+    # Optimizer
     optimizer = AdamW(model.parameters(), lr)
+    scaler = GradScaler()
 
     # Train and validation
     loss_train_tot = []
@@ -86,9 +88,10 @@ def main(
         # Train
         model.train(True)
         start_event.record()
-        seq, label, pred, loss_train = train(
-            model, optimizer, train_dl, ce_weights, pos_enc
-        )
+        with autocast():
+            seq, label, pred, loss_train = train(
+                model, optimizer, scaler, train_dl, ce_weights, pos_enc
+            )
         end_event.record()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
@@ -99,7 +102,8 @@ def main(
             )
 
         # Validation
-        seq, label, pred, loss_val = validation(model, val_dl, ce_weights, pos_enc)
+        with autocast():
+            seq, label, pred, loss_val = validation(model, val_dl, ce_weights, pos_enc)
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
                 seq[0],
@@ -133,7 +137,7 @@ def main(
 
 
 @torch.compile
-def train(model, optimizer, dataloader, ce_weights, pos_enc):
+def train(model, optimizer, scaler, dataloader, ce_weights, pos_enc):
     loss_train = []
     for _, item in enumerate(dataloader):
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
@@ -148,8 +152,9 @@ def train(model, optimizer, dataloader, ce_weights, pos_enc):
         loss_train.append(loss)
         # Optimize
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
         return seq, label, pred, loss_train
 
 

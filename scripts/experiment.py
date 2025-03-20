@@ -1,4 +1,3 @@
-import time
 import os
 import scripting
 import sh
@@ -21,8 +20,6 @@ def modify_yaml(script_dir, script, parameter_name, parameter_value):
 def main(
     train_script,
     script_dir,
-    log_dir,
-    container_name,
     model,
     hidden_size,
     pos_enc,
@@ -53,7 +50,6 @@ def main(
         modify_yaml(script_dir, script, "hidden_size", hidden_size)
         modify_yaml(script_dir, script, "pos_enc", pos_enc)
         modify_yaml(script_dir, script, "patch_len", patch_len)
-        modify_yaml(script_dir, script, "seq_len", seq_len)
         modify_yaml(script_dir, script, "split", split)
         modify_yaml(script_dir, script, "first_only", first_only)
         modify_yaml(script_dir, script, "epochs", epochs)
@@ -68,6 +64,7 @@ def main(
         print("Executing experiment with seed:", s)
         modify_yaml(script_dir, train_script, "seed", s)
         modify_yaml(script_dir, test_script, "seed", s)
+        modify_yaml(script_dir, test_script, "seq_len", seq_len * 8)  # w/ seq_len = 16
         sh.python(
             os.path.join(script_dir, train_script + ".py"),
             "-c",
