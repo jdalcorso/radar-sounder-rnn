@@ -18,12 +18,11 @@ from matplotlib.colors import ListedColormap
 from matplotlib.image import imread
 
 from model import NLURNNCell
-from utils import pos_encode, get_model, get_dataloaders
+from utils import get_model, get_dataloaders
 
 
 def main(
     hidden_size,
-    pos_enc,
     patch_len,
     seq_len,
     seed,
@@ -48,7 +47,7 @@ def main(
     for model in ["cdouble", "wcmod"]:
         # Model
         model_name = model
-        in_channels = 2 if pos_enc else 1
+        in_channels = 1
         cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
         model = NLURNNCell(*cfg)
         num_devices = device_count()
@@ -62,7 +61,6 @@ def main(
         with torch.no_grad():
             item = next(iter(dl))
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BT1HW
-            seq = pos_encode(seq) if pos_enc else seq
             this_preds, hidden, cell = [], None, None
             for i in range(seq_len):
                 pred, hidden, cell = model(seq[:, i], hidden, cell)  # BCHW
@@ -73,7 +71,7 @@ def main(
     # Fully-supervised
     # Model
     model_name = "aspp"
-    in_channels = 2 if pos_enc else 1
+    in_channels = 1
     cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
     model = get_model(model_name, cfg)
     num_devices = device_count()
@@ -87,7 +85,6 @@ def main(
     with torch.no_grad():
         item = next(iter(dl))
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-        seq = pos_encode(seq) if pos_enc else seq
         rgrams = item[0]  # BTHW
         labels = item[1].long()  # BTHW
         preds.append(model(seq).squeeze(2).argmax(2))  # BTHW x 3

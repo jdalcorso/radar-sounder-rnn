@@ -25,7 +25,6 @@ from utils import (
     plot_loss,
     get_dataloaders,
     plot_results,
-    pos_encode,
     get_model,
     save_latest,
 )
@@ -34,7 +33,6 @@ from utils import (
 def main(
     model,
     hidden_size,
-    pos_enc,
     patch_len,
     seq_len,
     chunk_len,
@@ -67,7 +65,7 @@ def main(
     )
 
     # Model
-    in_channels = 2 if pos_enc else 1
+    in_channels = 1
     cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
     model = get_model(model, cfg)
     num_devices = device_count()
@@ -77,7 +75,7 @@ def main(
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Optimizer
-    optimizer = AdamW(model.parameters(), lr)
+    optimizer = AdamW(model.parameters(), lr, weight_decay=1e-3)
     scaler = GradScaler()
 
     # Train and validation
@@ -91,7 +89,7 @@ def main(
         start_event.record()
         with autocast():
             seq, label, pred, loss_train = train(
-                model, optimizer, scaler, train_dl, seq_len, chunk_len, ce_weights, pos_enc
+                model, optimizer, scaler, train_dl, seq_len, chunk_len, ce_weights
             )
         end_event.record()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
@@ -104,7 +102,7 @@ def main(
 
         # Validation
         with autocast():
-            seq, label, pred, loss_val = validation(model, val_dl, ce_weights, pos_enc)
+            seq, label, pred, loss_val = validation(model, val_dl, ce_weights)
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
                 seq[0],
@@ -138,12 +136,11 @@ def main(
 
 
 @torch.compile
-def train(model, optimizer, scaler, dataloader, seq_len, chunk_len, ce_weights, pos_enc):
+def train(model, optimizer, scaler, dataloader, seq_len, chunk_len, ce_weights):
     loss_train = []
     num_chunks = seq_len // chunk_len
     for _, item in enumerate(dataloader):
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-        seq = pos_encode(seq) if pos_enc else seq
         label = item[1].to("cuda").long()  # BTHW
         pred = []
         for i in range(num_chunks):
@@ -169,13 +166,12 @@ def train(model, optimizer, scaler, dataloader, seq_len, chunk_len, ce_weights, 
 
 
 @torch.compile
-def validation(model, dataloader, ce_weights, pos_enc):
+def validation(model, dataloader, ce_weights):
     loss_val = []
     model.train(False)
     with torch.no_grad():
         for _, item in enumerate(dataloader):
             seq = item[0].to("cuda").unsqueeze(2)  # Adding channel dimension
-            seq = pos_encode(seq) if pos_enc else seq
             label = item[1].to("cuda").long()
             pred = model(seq)
             loss_t = cross_entropy(

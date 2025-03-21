@@ -22,7 +22,6 @@ def main(
     script_dir,
     model,
     hidden_size,
-    pos_enc,
     patch_len,
     seq_len,
     split,
@@ -48,7 +47,6 @@ def main(
     for script in [train_script, test_script]:
         modify_yaml(script_dir, script, "model", model)
         modify_yaml(script_dir, script, "hidden_size", hidden_size)
-        modify_yaml(script_dir, script, "pos_enc", pos_enc)
         modify_yaml(script_dir, script, "patch_len", patch_len)
         modify_yaml(script_dir, script, "split", split)
         modify_yaml(script_dir, script, "seq_len", seq_len)

@@ -7,7 +7,6 @@ container_name: rec_jordydalcorso
 # Model
 model: nlur
 hidden_size: 256
-pos_enc: False
 
 # Dataset
 dataset: mcords3

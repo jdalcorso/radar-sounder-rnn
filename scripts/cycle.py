@@ -19,7 +19,6 @@ from utils import (
     plot_loss,
     get_dataloaders,
     plot_results,
-    pos_encode,
     set_seed,
     validation_weak,
     save_latest,
@@ -30,7 +29,6 @@ set_seed(42)
 
 def main(
     hidden_size,
-    pos_enc,
     patch_len,
     seq_len,
     split,
@@ -53,7 +51,7 @@ def main(
     )
 
     # Model
-    in_channels = 2 if pos_enc else 1
+    in_channels = 1
     cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
     model = NLURNNCell(*cfg)
     num_devices = device_count()
@@ -74,7 +72,7 @@ def main(
         model.train(True)
         t0 = time.time()
         seq, label, pred, loss_train_sup, loss_train_cycle = train(
-            model, optimizer, train_dl, seq_len, ce_weights, pos_enc
+            model, optimizer, train_dl, seq_len, ce_weights
         )
         t1 = time.time() - t0
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
@@ -87,7 +85,7 @@ def main(
 
         # Validation
         seq, label, this_preds, loss_val = validation_weak(
-            model, val_dl, seq_len, ce_weights, pos_enc
+            model, val_dl, seq_len, ce_weights
         )
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
@@ -130,13 +128,12 @@ def main(
 
 
 # @torch.compile
-def train(model, optimizer, dataloader, seq_len, ce_weights, pos_enc):
+def train(model, optimizer, dataloader, seq_len, ce_weights):
     loss_train_sup = []
     loss_train_cycle = []
     ce_weights = torch.tensor(ce_weights, device="cuda")
     for _, item in enumerate(dataloader):
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-        seq = pos_encode(seq) if pos_enc else seq
         seq = torch.cat([seq, torch.flip(seq, dims=(1, -1))], dim=1)  # B(2T)CHW
         label = item[1].to("cuda").long()  # BTHW
         preds = []

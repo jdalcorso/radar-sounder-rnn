@@ -11,14 +11,13 @@ from dataset import RadargramDataset
 
 
 # @torch.compile
-def validation_weak(model, dataloader, seq_len, ce_weights, pos_enc):
+def validation_weak(model, dataloader, seq_len, ce_weights):
     loss_val = []
     ce_weights = torch.tensor(ce_weights, device="cuda")
     model.train(False)
     with torch.no_grad():
         for _, item in enumerate(dataloader):
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BT1HW
-            seq = pos_encode(seq) if pos_enc else seq
             label = item[1].to("cuda").long()  # BTHW
             this_preds, hidden, cell = [], None, None
             for i in range(seq_len):
@@ -158,23 +157,6 @@ def plot_results(seq, label, pred, name):
     plt.close()
 
 
-def pos_encode(seq):
-    # Set to 1 all pixels above max (in H)
-    B, T, C, H, W = seq.shape
-    m = torch.argmax(seq, dim=3)
-    m_expanded = m.unsqueeze(3).expand(-1, -1, -1, H, -1)
-    range_H = torch.arange(H).reshape(1, 1, 1, H, 1).to("cuda")
-    pos = (
-        (torch.clone(range_H) / torch.arange(H).sum())
-        .repeat([B, T, C, 1, W])
-        .flip(dims=(3,))
-    )
-    mask = range_H <= m_expanded
-    pos[mask] = 1.0
-    seq = torch.cat([seq, pos], dim=2)
-    return seq
-
-
 def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -182,49 +164,6 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
     numpy.random.seed(seed)
     random.seed(seed)
-
-
-def get_hooks(model_name, model, hook_fn):
-    hooks = []
-    assert isinstance(model, torch.nn.DataParallel)
-    match model_name:
-        case "u" | "nlu":
-            for layer in model.module.unet.encoder.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
-            for layer in model.module.unet.decoder.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
-            hooks.pop()
-        case "ur" | "nlur":
-            for layer in model.module.encoder.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
-            for layer in model.module.decoder.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
-        case "aspp":
-            for layer in model.module.unet.children():
-                hooks.append(layer.register_forward_hook(hook_fn))
-    return hooks
-
-
-def show_feature_maps(maps, out_dir):
-    """
-    Maps should be a list of CHW images.
-    This algorithm does PCA to transform each image into a 3HW,
-    min-max normalize and shows it in a subplot
-    """
-    fig, axes = plt.subplots(1, len(maps), figsize=(30, 10))
-    axes = axes.flatten()
-    for i in range(len(axes)):
-        C, H, W = maps[i].shape
-        map = maps[i].permute(1, 2, 0).flatten(0, 1)  # (HW)C
-        U, S, _ = torch.pca_lowrank(map, 3)
-        img = U[:, :3] @ torch.diag(S)  # (HW)3
-        img = img.view(H, W, 3)  # HW3
-        mi, ma = img.min(), img.max()
-        img = (img - mi) / (ma - mi)
-        axes[i].imshow(img.numpy(), aspect="auto", interpolation="nearest")
-        axes[i].axis("off")
-    plt.savefig(out_dir + "/maps.png")
-    plt.close()
 
 
 def save_latest(model, out_dir, loss_val_tot):
