@@ -43,6 +43,7 @@ def main(
     epochs,
     batch_size,
     lr,
+    wd,
     log_every,
     log_last,
     dataset,
@@ -75,7 +76,7 @@ def main(
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Optimizer
-    optimizer = AdamW(model.parameters(), lr, weight_decay=1e-3)
+    optimizer = AdamW(model.parameters(), lr, weight_decay=wd)
     scaler = GradScaler()
 
     # Train and validation
