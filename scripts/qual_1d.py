@@ -15,14 +15,12 @@ import matplotlib.pyplot as plt
 from torch.cuda import device_count
 from torch.nn import DataParallel
 from matplotlib.colors import ListedColormap
-from matplotlib.image import imread
 
-from utils import pos_encode, get_model, get_dataloaders
+from utils import get_model, get_dataloaders
 
 
 def main(
     hidden_size,
-    pos_enc,
     patch_len,
     seq_len,
     seed,
@@ -45,7 +43,7 @@ def main(
     for i, model in enumerate(["1d64"]):
         # Model
         model_name = model
-        in_channels = 2 if pos_enc else 1
+        in_channels = 1
         cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
         model = get_model("nlur", cfg)
         num_devices = device_count()
@@ -59,7 +57,6 @@ def main(
         with torch.no_grad():
             item = next(iter(dl))
             seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
-            seq = pos_encode(seq) if pos_enc else seq
             if i == 0:
                 rgrams = item[0]  # BTHW
                 labels = item[1].long()  # BTHW
