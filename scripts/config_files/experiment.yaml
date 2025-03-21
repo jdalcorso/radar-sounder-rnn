@@ -6,7 +6,7 @@ container_name: rec_jordydalcorso
 
 # Model
 model: nlur
-hidden_size: 128
+hidden_size: 256
 pos_enc: False
 
 # Dataset
@@ -19,8 +19,8 @@ seed: 10
 
 # Train
 epochs: 1000
-batch_size: 12
-lr: 0.001
+batch_size: 8
+lr: 0.0001
 
 # Log
 log_every: 50

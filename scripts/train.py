@@ -37,6 +37,7 @@ def main(
     pos_enc,
     patch_len,
     seq_len,
+    chunk_len,
     split,
     first_only,
     data_aug,
@@ -90,7 +91,7 @@ def main(
         start_event.record()
         with autocast():
             seq, label, pred, loss_train = train(
-                model, optimizer, scaler, train_dl, ce_weights, pos_enc
+                model, optimizer, scaler, train_dl, seq_len, chunk_len, ce_weights, pos_enc
             )
         end_event.record()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
@@ -137,24 +138,33 @@ def main(
 
 
 @torch.compile
-def train(model, optimizer, scaler, dataloader, ce_weights, pos_enc):
+def train(model, optimizer, scaler, dataloader, seq_len, chunk_len, ce_weights, pos_enc):
     loss_train = []
+    num_chunks = seq_len // chunk_len
     for _, item in enumerate(dataloader):
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
         seq = pos_encode(seq) if pos_enc else seq
         label = item[1].to("cuda").long()  # BTHW
-        pred = model(seq).squeeze(2)  # BTCHW
-        loss = cross_entropy(
-            pred.flatten(0, 1),
-            label.flatten(0, 1),
-            weight=torch.tensor(ce_weights, device="cuda"),
-        )
-        loss_train.append(loss)
-        # Optimize
-        optimizer.zero_grad()
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        pred = []
+        for i in range(num_chunks):
+            start = i * chunk_len
+            end = (i + 1) * chunk_len
+            seq_chunk = seq[:, start:end]
+            label_chunk = label[:, start:end]
+            pred_chunk = model(seq_chunk).squeeze(2)  # BTCHW
+            pred.append(pred_chunk)
+            loss = cross_entropy(
+                pred_chunk.flatten(0, 1),
+                label_chunk.flatten(0, 1),
+                weight=torch.tensor(ce_weights, device="cuda"),
+            )
+            loss_train.append(loss)
+            # Optimize
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        pred = torch.cat(pred, dim=1)
         return seq, label, pred, loss_train
 
 

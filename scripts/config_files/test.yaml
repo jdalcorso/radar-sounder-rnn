@@ -1,6 +1,6 @@
 # Model
 model: nlur
-hidden_size: 128
+hidden_size: 256
 pos_enc: False
 
 # Dataset
@@ -9,10 +9,10 @@ patch_len: 32
 seq_len: 128
 split: [0.75, 0.25]
 first_only: False
-seed: 0
+seed: 9
 
 # Test
-batch_size: 1
+batch_size: 8
 
 # Log
 return_dict: False
