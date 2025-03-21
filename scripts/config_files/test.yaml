@@ -8,13 +8,12 @@ patch_len: 32
 seq_len: 128
 split: [0.75, 0.25]
 first_only: False
-seed: 9
+seed: 1
 
 # Test
 batch_size: 8
 
 # Log
-return_dict: False
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_level: info

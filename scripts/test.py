@@ -10,6 +10,7 @@ import glob
 import logging
 import scripting
 import torch
+import json
 
 from torch.cuda import device_count
 from torch.nn import DataParallel
@@ -21,8 +22,6 @@ from utils import (
     load_best,
 )
 
-hooked_outputs = []
-
 
 def main(
     model,
@@ -33,7 +32,6 @@ def main(
     first_only,
     seed,
     batch_size,
-    return_dict,
     dataset,
     out_dir,
     **kwargs,
@@ -78,9 +76,11 @@ def main(
 
     logger.info("Classification report:\n")
     report = classification_report(
-        labels.flatten(), preds.flatten().cpu(), output_dict=return_dict
+        labels.flatten(), preds.flatten().cpu(), output_dict=True
     )
-    logger.info(report)
+    torch.save(report, out_dir + "/report_seed_{}.pt".format(seed))
+    report_str = json.dumps(report, indent=4)
+    logger.info(report_str)
     logger.info("Confusion matrix:\n")
     logger.info(confusion_matrix(labels.flatten(), preds.flatten().cpu()))
 
@@ -88,10 +88,6 @@ def main(
     torch.save(model.state_dict(), os.path.join(out_dir, "best.pt"))
     for file in glob.glob(os.path.join(out_dir, "epoch*")):
         os.remove(file)
-
-
-def hook_fn(module, input, output):
-    hooked_outputs.append(output[0].detach().cpu())
 
 
 if __name__ == "__main__":
