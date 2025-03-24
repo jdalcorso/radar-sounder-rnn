@@ -26,6 +26,7 @@ def main(
     hidden_size,
     patch_len,
     seq_len,
+    chunk_len,
     seq_len_test,
     split,
     first_only,
@@ -63,6 +64,7 @@ def main(
         modify_yaml(script_dir, script, "out_dir", out_dir)
     modify_yaml(script_dir, train_script, "seq_len", seq_len)
     modify_yaml(script_dir, test_script, "seq_len", seq_len_test)
+    modify_yaml(script_dir, test_script, "chunk_len", chunk_len)
 
     # Run seeded training
     for s in range(seed):
@@ -97,17 +99,21 @@ def main(
     for c in range(n_classes):
         print("\nClass:", c)
         print(
-            "Precision:",
-            precision[:, c].mean().item(),
-            "(",
-            precision[:, c].std().item(),
-            ")",
+            f"Precision: {round(precision[:, c].mean().item() * 100, 2)} "
+            f"({round(precision[:, c].std().item() * 100, 2)})"
         )
         print(
-            "Recall:", recall[:, c].mean().item(), "(", recall[:, c].std().item(), ")"
+            f"Recall: {round(recall[:, c].mean().item() * 100, 2)} "
+            f"({round(recall[:, c].std().item() * 100, 2)})"
         )
-        print("F1:", f1[:, c].mean().item(), "(", f1[:, c].std().item(), ")")
-    print("\nAccuracy:", accuracy.mean().item(), "(", accuracy.std().item(), ")")
+        print(
+            f"F1: {round(f1[:, c].mean().item() * 100, 2)} "
+            f"({round(f1[:, c].std().item() * 100, 2)})"
+        )
+        print(
+            f"\nAccuracy: {round(accuracy.mean().item() * 100, 2)} "
+            f"({round(accuracy.std().item() * 100, 2)})"
+        )
 
 
 if __name__ == "__main__":
