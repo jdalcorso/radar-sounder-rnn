@@ -171,11 +171,14 @@ def save_latest(model, out_dir, loss_val_tot):
     Saves the model checkpoint in the out_dir folder and names it latest_xxx.pt
     where xxx is the last validation loss (only decimals).
     """
-    loss_val = round(loss_val_tot[-1].item(), 3)
-    loss_val = str(loss_val).split(".")[0] + str(loss_val).split(".")[1]
-    while len(loss_val) <= 4:
-        loss_val = loss_val + "0"
-    torch.save(model.state_dict(), out_dir + "/epoch_" + loss_val + ".pt")
+    try:
+        loss_val = round(loss_val_tot[-1].item(), 3)
+        loss_val = str(loss_val).split(".")[0] + str(loss_val).split(".")[1]
+        while len(loss_val) <= 4:
+            loss_val = loss_val + "0"
+        torch.save(model.state_dict(), out_dir + "/epoch_" + loss_val + ".pt")
+    except:
+        torch.save(model.state_dict(), out_dir + "/epoch_11111.pt")
 
 
 def load_best(model, out_dir):
