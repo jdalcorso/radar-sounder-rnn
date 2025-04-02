@@ -13,6 +13,7 @@ import scripting
 import torch
 
 from torch.cuda import device_count
+from torch.cuda.amp import autocast, GradScaler
 from torch.nn import DataParallel
 from torch.nn.functional import cross_entropy, softmax
 from torch.optim import AdamW
@@ -65,20 +66,23 @@ def main(
 
     # Optimizer
     optimizer = AdamW(model.parameters(), lr)
+    scaler = GradScaler()
 
     # Train
     loss_train_tot = []
     loss_val_tot = []
+    start_event = torch.cuda.Event(enable_timing=True)
+    end_event = torch.cuda.Event(enable_timing=True)
     for epoch in range(epochs):
-        t0 = time.time()
 
         # Train
         model.train(True)
-        t0 = time.time()
-        seq, label, pred, loss_train = train(
-            model, optimizer, train_dl, seq_len, ce_weights
-        )
-        t1 = time.time() - t0
+        start_event.record()
+        with autocast():
+            seq, label, pred, loss_train = train(
+                model, optimizer, scaler, train_dl, seq_len, ce_weights
+            )
+        end_event.record()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
                 seq[0, :seq_len],
@@ -88,9 +92,10 @@ def main(
             )
 
         # Validation
-        seq, label, this_preds, loss_val = validation_weak(
-            model, val_dl, seq_len, ce_weights
-        )
+        with autocast():
+            seq, label, this_preds, loss_val = validation_weak(
+                model, val_dl, seq_len, ce_weights
+            )
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
             plot_results(
                 seq[0],
@@ -114,14 +119,19 @@ def main(
             save_latest(model, out_dir, loss_val_tot)
         logger_str = "Epoch: {}, Loss train: {:.3f}, Loss val: {:.3f}, Time: {:.3f}"
         logger.info(
-            logger_str.format(epoch + 1, loss_train.item(), loss_val.item(), t1)
+            logger_str.format(
+                epoch + 1,
+                loss_train.item(),
+                loss_val.item(),
+                start_event.elapsed_time(end_event),
+            )
         )
 
     torch.save(model.state_dict(), out_dir + "/latest.pt")
 
 
 @torch.compile
-def train(model, optimizer, dataloader, seq_len, ce_weights):
+def train(model, optimizer, scaler, dataloader, seq_len, ce_weights):
     loss_train = []
     ce_weights = torch.tensor(ce_weights, device="cuda")
     for _, item in enumerate(dataloader):
@@ -147,8 +157,9 @@ def train(model, optimizer, dataloader, seq_len, ce_weights):
                     loss += cross_entropy(
                         pred, torch.flip(label[:, 0], dims=(-1,)), ce_weights
                     )
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
         loss_train.append(loss)
     preds = torch.cat(preds, 1)  # BTCHW
     return seq, label, preds, loss_train
