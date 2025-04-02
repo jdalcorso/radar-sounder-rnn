@@ -4,18 +4,18 @@ hidden_size: 128
 # Dataset
 dataset: mcords1
 patch_len: 32
-seq_len: 32
+seq_len: 16
 split: [0.75, 0.25]
 seed: 1
 
 # Train
-epochs: 100
-batch_size: 16
+epochs: 5
+batch_size: 32
 lr: 0.001
 
 # Log
-log_every: 100
-log_last: 10
+log_every: 1
+log_last: 1
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_level: info
