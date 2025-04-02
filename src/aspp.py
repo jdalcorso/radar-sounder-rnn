@@ -182,17 +182,17 @@ class UNetASPP(nn.Module):
         bilinear = False
 
         # Usual UNet
-        self.inc = DoubleConv(n_channels, hc//16)
-        self.down1 = Down(hc//16, hc//8)
-        self.down2 = Down(hc//8, hc//4)
-        self.down3 = Down(hc//4, hc//2)
+        self.inc = DoubleConv(n_channels, hc // 16)
+        self.down1 = Down(hc // 16, hc // 8)
+        self.down2 = Down(hc // 8, hc // 4)
+        self.down3 = Down(hc // 4, hc // 2)
         factor = 2 if bilinear else 1
-        self.down4 = Down(hc//2, hc // factor)
-        self.up1 = UpGate(hc, hc//2 // factor)
-        self.up2 = UpGate(hc//2, hc//4 // factor)
-        self.up3 = UpGate(hc//4, hc//8 // factor)
-        self.up4 = UpGate(hc//8, hc//16)
-        self.outc = OutConv(hc//16, n_classes)
+        self.down4 = Down(hc // 2, hc // factor)
+        self.up1 = UpGate(hc, hc // 2 // factor)
+        self.up2 = UpGate(hc // 2, hc // 4 // factor)
+        self.up3 = UpGate(hc // 4, hc // 8 // factor)
+        self.up4 = UpGate(hc // 8, hc // 16)
+        self.outc = OutConv(hc // 16, n_classes)
         # ASPP
         self.aspp = ASPP(hc)
 
@@ -209,21 +209,3 @@ class UNetASPP(nn.Module):
         x = self.up4(x, x0)
         logits = self.outc(x)
         return logits
-
-
-class UNetASPPWrapper(nn.Module):
-    """
-    Wrapper that merges batch and sequence dimension.
-    """
-
-    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
-        super().__init__()
-        self.unet = UNetASPP(in_channels, out_channels, hidden_channels)
-        self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
-
-    def forward(self, x):  # BTcHW
-        B, T, c, H, W = x.shape
-        x = x.flatten(0, 1)  # (BT)cHW
-        x = self.unet(x)
-        x = x.view(B, T, -1, H, W)  # BTCHW
-        return x
