@@ -11,19 +11,21 @@ class NL1D(nn.Module):
         super().__init__()
         self.g = nn.Conv1d(out_channels, mid_channels, 1)
         self.outc = nn.Conv1d(mid_channels, out_channels, 1)
-        self.bn = nn.BatchNorm2d(out_channels)  # Add BN
+        self.bn = nn.BatchNorm1d(out_channels)  # Add BN
+        nn.init.constant_(self.bn.weight, 0)
+        self.maxpool = nn.MaxPool1d(2)
 
     def forward(self, patch):  # BCHW
         _, C, _, W = patch.shape
         x = patch.mean(3)  # BCH
-        x = F.layer_norm(x, x.shape[1:])  # Normalize more stably
-        f = torch.bmm(x.transpose(1, 2), x) / (C**0.5)  # Scaled dot-product
-        f = F.softmax(f, dim=2)  # BHH
-        y = self.g(x).transpose(1, 2)  # BHc
+        f = torch.bmm(x.transpose(1, 2), self.maxpool(x))  # BHh
+        f = F.softmax(f, dim=-1)  # BHh
+        y = self.maxpool(self.g(x)).transpose(1, 2)  # Bhc
         y = torch.bmm(f, y).transpose(1, 2)  # BcH
-        y = self.outc(y).unsqueeze(-1)  # BCH1
+        y = self.outc(y)  # BCH
+        y = self.bn(y).unsqueeze(-1)  # BCH1
         out = patch + y.repeat(1, 1, 1, W)  # Residual
-        return F.silu(self.bn(out))  # Post-activation
+        return F.relu(out)  # Post-activation
 
 
 class ConvNL(nn.Module):
