@@ -1,6 +1,7 @@
 import torch.nn as nn
-from rnn import ConvLSTM, ConvLSTMCell, ConvRNN
+from rnn import ConvLSTM, ConvLSTMCell
 from unet import UNet, UNetDecoder, UNetEncoder
+from aspp import UNetASPP
 from nl import NLUNet, NLUNetDecoder, NLUNetEncoder
 from one_d import NLUNetEncoder1D, NLUNetDecoder1D, ConvLSTM1D
 
@@ -33,6 +34,24 @@ class NLUNetWrapper(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
         super().__init__()
         self.unet = NLUNet(in_channels, out_channels, hidden_channels)
+        self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def forward(self, x):  # BTcHW
+        B, T, c, H, W = x.shape
+        x = x.flatten(0, 1)  # (BT)cHW
+        x = self.unet(x)
+        x = x.view(B, T, -1, H, W)  # BTCHW
+        return x
+
+
+class UNetASPPWrapper(nn.Module):
+    """
+    Wrapper that merges batch and sequence dimension.
+    """
+
+    def __init__(self, in_channels, hidden_channels, out_channels, input_shape):
+        super().__init__()
+        self.unet = UNetASPP(in_channels, out_channels, hidden_channels)
         self.nparams = sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def forward(self, x):  # BTcHW
