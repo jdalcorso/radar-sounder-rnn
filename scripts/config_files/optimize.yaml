@@ -1,10 +1,11 @@
 # Model
-n_trials: 50
+n_trials: 1
+train_func: cycle_double
 model: nlur
-hidden_size: 256
+hidden_size: 128
 
 # Dataset
-dataset: mcords3
+dataset: mcords1
 patch_len: 32
 seq_len: 32
 chunk_len: 16
@@ -14,8 +15,9 @@ data_aug: False
 seed: 0
 
 # Train
-epochs: 1000
+epochs: 1
 batch_size: 8
+batch_number: 2
 lr: [0.0001, 0.01]
 wd: [0.000001, 0.01]
 

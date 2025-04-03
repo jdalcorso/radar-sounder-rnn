@@ -139,6 +139,7 @@ def main(
         )
 
     torch.save(model.state_dict(), out_dir + "/latest.pt")
+    return torch.min(torch.tensor(loss_val_tot))
 
 
 @torch.compile
