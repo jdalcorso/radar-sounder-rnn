@@ -122,10 +122,11 @@ def plot_results(seq, label, pred, name):
     """
     # seq, label, pred has to be THW (seq TCHW -> THW)
     seq = seq[:, 0] if len(seq.shape) > 3 else seq
-    T = seq.shape[0]
+    T_plot = seq.shape[0] if seq.shape[0] > 1 else 2
+    T_seq = T_plot if seq.shape[0] > 1 else 1
     if seq.shape[-1] != 1:
-        _, axes = plt.subplots(3, T, figsize=(20, 20))
-        for i in range(T):
+        _, axes = plt.subplots(3, T_plot, figsize=(20, 20))
+        for i in range(T_seq):
             axes[0, i].imshow(seq[i].cpu().numpy(), cmap="gray", aspect="auto")
             axes[0, i].axis("off")
             axes[1, i].imshow(
@@ -141,7 +142,7 @@ def plot_results(seq, label, pred, name):
         S = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
         L = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
         P = torch.zeros((seq.shape[1], seq.shape[0]), device="cuda")
-        for i in range(T):
+        for i in range(T_plot):
             S[:, i] = seq[i].squeeze()
             L[:, i] = label[i].squeeze()
             P[:, i] = pred[i].squeeze()
