@@ -38,6 +38,7 @@ def main(
     batch_size,
     batch_number,
     lr,
+    wd,
     dataset,
     log_every,
     log_last,
@@ -63,7 +64,7 @@ def main(
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Optimizer
-    optimizer = AdamW(model.parameters(), lr)
+    optimizer = AdamW(model.parameters(), lr, weight_decay=wd)
     scaler = GradScaler()
 
     # Batches
@@ -143,6 +144,7 @@ def main(
         )
 
     torch.save(model.state_dict(), out_dir + "/latest.pt")
+    return torch.min(torch.tensor(loss_val_tot))
 
 
 # @torch.compile
