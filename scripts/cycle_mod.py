@@ -41,6 +41,7 @@ def main(
     batch_size,
     batch_number,
     lr,
+    wd,
     dataset,
     log_every,
     log_last,
@@ -66,12 +67,13 @@ def main(
     logger.info(f"Total number of learnable parameters: {model.module.nparams}")
 
     # Optimizer
-    optimizer = AdamW(model.parameters(), lr)
+    optimizer = AdamW(model.parameters(), lr, weight_decay=wd)
     scaler = GradScaler()
 
     # Batches
     num_batches = len(train_dl)  # Get total number of batches
     selected_indices = random.sample(range(num_batches), batch_number)
+    logger.info(f"Selected {len(selected_indices)*batch_size} samples for training.")
 
     # Train
     loss_train_tot = []

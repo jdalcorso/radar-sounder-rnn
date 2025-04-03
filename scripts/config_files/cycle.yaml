@@ -1,5 +1,5 @@
 # Model
-hidden_size: 128
+hidden_size: 256
 
 # Dataset
 dataset: mcords1
@@ -9,7 +9,7 @@ split: [0.75, 0.25]
 seed: 0
 
 # Train
-epochs: 10
+epochs: 100
 batch_size: 16
 batch_number: 2
 lr: 0.001
@@ -17,7 +17,7 @@ wd: 0.01
 
 # Log
 log_every: 5
-log_last: 1
+log_last: 30
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_level: info

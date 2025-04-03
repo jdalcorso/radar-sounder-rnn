@@ -10,9 +10,10 @@ seed: 1
 
 # Train
 epochs: 1
-batch_size: 32
-batch_number: 1
+batch_size: 16
+batch_number: 2
 lr: 0.001
+wd: 0.01
 
 # Log
 log_every: 1

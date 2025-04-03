@@ -33,6 +33,7 @@ def main(
     seed,
     epochs,
     batch_size,
+    batch_number,
     lr,
     wd,
     dataset,
@@ -57,6 +58,7 @@ def main(
         modify_yaml(script_dir, script, "first_only", first_only)
         modify_yaml(script_dir, script, "epochs", epochs)
         modify_yaml(script_dir, script, "batch_size", batch_size)
+        modify_yaml(script_dir, script, "batch_number", batch_number)
         modify_yaml(script_dir, script, "lr", lr)
         modify_yaml(script_dir, script, "wd", wd)
         modify_yaml(script_dir, script, "dataset", dataset)
