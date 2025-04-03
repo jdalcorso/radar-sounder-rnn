@@ -4,13 +4,14 @@ hidden_size: 128
 # Dataset
 dataset: mcords1
 patch_len: 32
-seq_len: 32
+seq_len: 16
 split: [0.75, 0.25]
 seed: 0
 
 # Train
-epochs: 100
+epochs: 10
 batch_size: 16
+batch_number: 2
 lr: 0.001
 
 # Log

@@ -4,7 +4,7 @@ Cycle-Consistency-based training script.
 
 @author: Jordy Dal Corso
 """
-import time
+import random
 import logging
 import scripting
 import torch
@@ -36,6 +36,7 @@ def main(
     seed,
     epochs,
     batch_size,
+    batch_number,
     lr,
     dataset,
     log_every,
@@ -65,6 +66,11 @@ def main(
     optimizer = AdamW(model.parameters(), lr)
     scaler = GradScaler()
 
+    # Batches
+    num_batches = len(train_dl)  # Get total number of batches
+    selected_indices = random.sample(range(num_batches), batch_number)
+    logger.info(f"Selected {len(selected_indices)*batch_size} samples for training.")
+
     # Train
     loss_train_tot_sup = []
     loss_train_tot_cycle = []
@@ -77,7 +83,13 @@ def main(
         start_event.record()
         with autocast():
             seq, label, pred, loss_train_sup, loss_train_cycle = train(
-                model, optimizer, scaler, train_dl, seq_len, ce_weights
+                model,
+                optimizer,
+                scaler,
+                train_dl,
+                selected_indices,
+                seq_len,
+                ce_weights,
             )
         end_event.record()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
@@ -134,11 +146,13 @@ def main(
 
 
 # @torch.compile
-def train(model, optimizer, scaler, dataloader, seq_len, ce_weights):
+def train(model, optimizer, scaler, dataloader, selected_indices, seq_len, ce_weights):
     loss_train_sup = []
     loss_train_cycle = []
     ce_weights = torch.tensor(ce_weights, device="cuda")
-    for _, item in enumerate(dataloader):
+    for n, item in enumerate(dataloader):
+        if n not in selected_indices:
+            continue
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
         seq = torch.cat([seq, torch.flip(seq, dims=(1, -1))], dim=1)  # B(2T)CHW
         label = item[1].to("cuda").long()  # BTHW

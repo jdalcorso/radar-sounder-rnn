@@ -9,8 +9,9 @@ split: [0.75, 0.25]
 seed: 1
 
 # Train
-epochs: 5
+epochs: 1
 batch_size: 32
+batch_number: 1
 lr: 0.001
 
 # Log
