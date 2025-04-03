@@ -7,7 +7,7 @@ paper: https://arxiv.org/abs/2006.14613
 
 @author: Jordy Dal Corso
 """
-import time
+import random
 import logging
 import scripting
 import torch
@@ -39,6 +39,7 @@ def main(
     seed,
     epochs,
     batch_size,
+    batch_number,
     lr,
     dataset,
     log_every,
@@ -68,6 +69,10 @@ def main(
     optimizer = AdamW(model.parameters(), lr)
     scaler = GradScaler()
 
+    # Batches
+    num_batches = len(train_dl)  # Get total number of batches
+    selected_indices = random.sample(range(num_batches), batch_number)
+
     # Train
     loss_train_tot = []
     loss_val_tot = []
@@ -80,7 +85,13 @@ def main(
         start_event.record()
         with autocast():
             seq, label, pred, loss_train = train(
-                model, optimizer, scaler, train_dl, seq_len, ce_weights
+                model,
+                optimizer,
+                scaler,
+                train_dl,
+                selected_indices,
+                seq_len,
+                ce_weights,
             )
         end_event.record()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
@@ -131,10 +142,12 @@ def main(
 
 
 @torch.compile
-def train(model, optimizer, scaler, dataloader, seq_len, ce_weights):
+def train(model, optimizer, scaler, dataloader, selected_indices, seq_len, ce_weights):
     loss_train = []
     ce_weights = torch.tensor(ce_weights, device="cuda")
-    for _, item in enumerate(dataloader):
+    for n, item in enumerate(dataloader):
+        if n not in selected_indices:
+            continue
         seq = item[0].to("cuda").unsqueeze(2)  # BTHW -> BTCHW
         label = item[1].to("cuda").long()  # BTHW
         for sub_len in range(1, seq_len):  # to create each sub-sequence
