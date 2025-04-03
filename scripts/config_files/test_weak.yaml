@@ -1,6 +1,6 @@
 # Model
 model: nlur
-hidden_size: 256
+hidden_size: 128
 
 # Dataset
 dataset: mcords1

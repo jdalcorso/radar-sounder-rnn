@@ -11,6 +11,7 @@ on 1 channel radar sounder data.
 
 @author: Jordy Dal Corso
 """
+import random
 import logging
 import scripting
 import torch
@@ -42,6 +43,7 @@ def main(
     seed,
     epochs,
     batch_size,
+    batch_number,
     lr,
     wd,
     log_every,
@@ -78,6 +80,12 @@ def main(
     # Optimizer
     optimizer = AdamW(model.parameters(), lr, weight_decay=wd)
     scaler = GradScaler()
+
+    # Batches
+    num_batches = len(train_dl)  # Get total number of batches
+    batch_number = num_batches if batch_number < 1 else batch_number
+    selected_indices = random.sample(range(num_batches), batch_number)
+    logger.info(f"Selected {len(selected_indices)*batch_size} samples for training.")
 
     # Train and validation
     loss_train_tot = []
@@ -146,10 +154,14 @@ def train(model, optimizer, scaler, dataloader, seq_len, chunk_len, ce_weights):
         label = item[1].to("cuda").long()  # BTHW
         pred = []
         for i in range(num_chunks):
-            start = i * chunk_len
-            end = (i + 1) * chunk_len
-            seq_chunk = seq[:, start:end]
-            label_chunk = label[:, start:end]
+            if num_chunks == 1:
+                seq_chunk = seq
+                label_chunk = label
+            else:
+                start = i * chunk_len
+                end = (i + 1) * chunk_len
+                seq_chunk = seq[:, start:end]
+                label_chunk = label[:, start:end]
             pred_chunk = model(seq_chunk).squeeze(2)  # BTCHW
             pred.append(pred_chunk)
             loss = cross_entropy(

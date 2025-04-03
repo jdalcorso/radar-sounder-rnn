@@ -1,20 +1,21 @@
 # Model
-model: nlur
+model: u
 hidden_size: 256
 
 # Dataset
-dataset: mcords3
+dataset: mcords1
 patch_len: 32
 seq_len: 32
-chunk_len: 16
+chunk_len: 32
 split: [0.75, 0.25]
-first_only: False
+first_only: True
 data_aug: False
-seed: 2
+seed: 0
 
 # Train
-epochs: 1000
-batch_size: 8
+epochs: 100
+batch_size: 16
+batch_number: 2
 lr: 0.0001
 wd: 0.01
 
