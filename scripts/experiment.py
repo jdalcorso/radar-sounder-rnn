@@ -112,10 +112,10 @@ def main(
             f"F1: {round(f1[:, c].mean().item() * 100, 2)} "
             f"({round(f1[:, c].std().item() * 100, 2)})"
         )
-        print(
-            f"\nAccuracy: {round(accuracy.mean().item() * 100, 2)} "
-            f"({round(accuracy.std().item() * 100, 2)})"
-        )
+    print(
+        f"\nAccuracy: {round(accuracy.mean().item() * 100, 2)} "
+        f"({round(accuracy.std().item() * 100, 2)})"
+    )
 
 
 if __name__ == "__main__":
