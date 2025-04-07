@@ -44,7 +44,7 @@ class ConvNL(nn.Module):
                 bias=False,
                 padding_mode="reflect",
             ),
-            nn.BatchNorm2d(mid_channels),
+            nn.InstanceNorm2d(mid_channels),
             nn.ReLU(inplace=True),
         )
         self.nl = NL1D(out_channels, out_channels)  # TODO
