@@ -145,7 +145,7 @@ def main(
     return torch.min(torch.tensor(loss_val_tot))
 
 
-@torch.compile
+# @torch.compile
 def train(model, optimizer, scaler, dataloader, seq_len, chunk_len, ce_weights):
     loss_train = []
     num_chunks = seq_len // chunk_len
@@ -179,7 +179,7 @@ def train(model, optimizer, scaler, dataloader, seq_len, chunk_len, ce_weights):
         return seq, label, pred, loss_train
 
 
-@torch.compile
+# @torch.compile
 def validation(model, dataloader, ce_weights):
     loss_val = []
     model.train(False)
