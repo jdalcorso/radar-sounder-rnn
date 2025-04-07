@@ -75,7 +75,8 @@ def main(
     if num_devices >= 2:
         model = DataParallel(model)
     model = model.to("cuda")
-    logger.info(f"Total number of learnable parameters: {model.module.nparams}")
+    nparams = model.module.nparams if num_devices >= 2 else model.nparams
+    logger.info(f"Total number of learnable parameters: {nparams}")
 
     # Optimizer
     optimizer = AdamW(model.parameters(), lr, weight_decay=wd)

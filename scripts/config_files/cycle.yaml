@@ -6,7 +6,7 @@ dataset: mcords1
 patch_len: 32
 seq_len: 16
 split: [0.75, 0.25]
-seed: 0
+seed: 9
 
 # Train
 epochs: 100
@@ -16,7 +16,7 @@ lr: 0.001
 wd: 0.01
 
 # Log
-log_every: 5
+log_every: 100
 log_last: 40
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log

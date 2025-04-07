@@ -55,7 +55,8 @@ def main(
     except:
         model.load_state_dict(torch.load(out_dir + "/best.pt"))
         logger.info("Loaded best.pt")
-    logger.info(f"Total number of learnable parameters: {model.module.nparams}")
+    nparams = model.module.nparams if num_devices >= 2 else model.nparams
+    logger.info(f"Total number of learnable parameters: {nparams}")
 
     # Test
     model.train(False)
