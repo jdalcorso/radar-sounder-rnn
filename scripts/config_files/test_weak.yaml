@@ -1,16 +1,16 @@
 # Model
 model: nlur
-hidden_size: 128
+hidden_size: 256
 
 # Dataset
 dataset: mcords1
 patch_len: 32
-seq_len: 16
+seq_len: 128
 split: [0.75, 0.25]
 seed: 9
 
 # Test
-batch_size: 32
+batch_size: 16
 
 # Log
 return_dict: True

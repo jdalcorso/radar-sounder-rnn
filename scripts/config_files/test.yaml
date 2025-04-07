@@ -1,17 +1,17 @@
 # Model
-model: nlur
-hidden_size: 256
+model: u
+hidden_size: 128
 
 # Dataset
-dataset: mcords3
+dataset: mcords1
 patch_len: 32
 seq_len: 128
 split: [0.75, 0.25]
-first_only: False
-seed: 2
+first_only: True
+seed: 9
 
 # Test
-batch_size: 8
+batch_size: 16
 
 # Log
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
