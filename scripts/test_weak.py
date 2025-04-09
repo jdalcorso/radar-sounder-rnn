@@ -77,15 +77,19 @@ def main(
     preds = torch.cat(preds, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)
     torch.save(preds.byte(), out_dir + "/pred.pt")
 
+    labels = labels.flatten()
+    preds = preds.flatten().cpu()
+    if dataset == "mcords3":
+        mask = labels != 5
+        labels = labels[mask]
+        preds = preds[mask]
     logger.info("Classification report:\n")
-    report = classification_report(
-        labels.flatten(), preds.flatten().cpu(), output_dict=True
-    )
+    report = classification_report(labels, preds, output_dict=True)
     torch.save(report, out_dir + "/report_seed_{}.pt".format(seed))
     report_str = json.dumps(report, indent=4)
     logger.info(report_str)
     logger.info("Confusion matrix:\n")
-    logger.info(confusion_matrix(labels.flatten(), preds.flatten().cpu()))
+    logger.info(confusion_matrix(labels, preds))
 
     # Delete all files in the output folder that start with "epoch"
     torch.save(model.state_dict(), os.path.join(out_dir, "best.pt"))
