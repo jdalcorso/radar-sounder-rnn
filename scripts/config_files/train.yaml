@@ -1,21 +1,21 @@
 # Model
 model: u
-hidden_size: 128
+hidden_size: 256
 
 # Dataset
 dataset: mcords1
 patch_len: 32
-seq_len: 32
-chunk_len: 32
+seq_len: 4
+chunk_len: 4
 split: [0.75, 0.25]
 first_only: True
 data_aug: False
 seed: 9
 
 # Train
-epochs: 1000
-batch_size: 16
-batch_number: 2
+epochs: 200
+batch_size: 4
+batch_number: 8
 lr: 0.001
 wd: 0.01
 

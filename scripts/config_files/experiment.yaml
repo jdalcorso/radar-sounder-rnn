@@ -5,24 +5,24 @@ log_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
 container_name: rec_jordydalcorso
 
 # Model
-model: nlur
+model: u
 hidden_size: 256
 
 # Dataset
-dataset: mcords3
+dataset: mcords1
 patch_len: 32
 seq_len: 32
 chunk_len: 16
 seq_len_test: 128
 split: [0.75, 0.25]
-first_only: False
-seed: 3
+first_only: True
+seed: 0
 
 # Train
-epochs: 3
-batch_size: 8
-batch_number: 2
-lr: 0.0001
+epochs: 500
+batch_size: 4
+batch_number: 8
+lr: 0.001
 wd: 0.01
 
 # Log
