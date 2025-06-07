@@ -41,7 +41,6 @@ def main(
     )
 
     # Model
-    model_name = model
     in_channels = 1
     cfg = [in_channels, hidden_size, n_classes, (patch_h, patch_len)]
     model = NLURNNCell(*cfg)
@@ -75,14 +74,23 @@ def main(
 
     labels = torch.cat(labels, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)
     preds = torch.cat(preds, dim=0).permute(1, 0, 2).reshape(seq.shape[3], -1)
-    torch.save(preds.byte(), out_dir + "/pred.pt")
 
+    # Set to free-space predictions above the surface (trivial)
+    if dataset == "mcords1":
+        for col in range(preds.shape[1]):
+            last_zero_idx = (preds[:, col] == 0).nonzero(as_tuple=True)[0][-1]
+            preds[:last_zero_idx, col] = 0
+
+    torch.save(preds.byte(), out_dir + "/pred.pt")
     labels = labels.flatten()
     preds = preds.flatten().cpu()
+
+    # Remove class 5 as per Garcia et al. 2023
     if dataset == "mcords3":
         mask = labels != 5
         labels = labels[mask]
         preds = preds[mask]
+
     logger.info("Classification report:\n")
     report = classification_report(labels, preds, output_dict=True)
     torch.save(report, out_dir + "/report_seed_{}.pt".format(seed))

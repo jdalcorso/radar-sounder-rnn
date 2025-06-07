@@ -1,4 +1,6 @@
 #!/bin/bash
+# Bash script to run tests on grid of hyperparameters (use optimize.py for better control)
+
 script_dir=$1
 log_dir=$2
 container_name=$3

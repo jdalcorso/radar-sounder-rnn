@@ -1,6 +1,6 @@
 # Model
 model: u
-hidden_size: 128
+hidden_size: 256
 
 # Dataset
 dataset: mcords1
@@ -11,7 +11,7 @@ first_only: True
 seed: 9
 
 # Test
-batch_size: 16
+batch_size: 4
 
 # Log
 out_dir: /home/jordydalcorso/workspace/recurrent-sounder/log
